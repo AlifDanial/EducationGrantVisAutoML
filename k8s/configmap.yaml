@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: visautoml-config
+  namespace: visautoml
+data:
+  DJANGO_SETTINGS_MODULE: "VisAutoML.settings"
+  DJANGO_ALLOWED_HOSTS: "api.visautoml.com"
+  REACT_APP_API_URL: "https://api.visautoml.com"
+  REACT_APP_DASH_URL: "https://dash.visautoml.com"
+  FLASK_APP: "app.py"
+  FLASK_ENV: "production"
+  SERVICE_DISCOVERY_CONFIG: |
+    {
+      "services": {
+        "django": {
+          "internal": "http://visautoml-backend:8000",
+          "external": "https://api.visautoml.com"
+        },
+        "flask": {
+          "internal": "http://visautoml-dash:8050",
+          "external": "https://dash.visautoml.com"
+        },
+        "frontend": {
+          "internal": "http://visautoml-frontend:3000",
+          "external": "https://visautoml.com"
+        }
+      }
+    } 

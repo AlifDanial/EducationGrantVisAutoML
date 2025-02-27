@@ -23,8 +23,8 @@ urlpatterns = [
     path("api/description/<pk>/",
          views.ModelDescriptionViewSet.as_view({"patch": "update"})),
     path('', TemplateView.as_view(template_name='index.html')),
-    path("api/dashboard/<pk>/", views.ModelViewSet.as_view({"post":"open"}))
-    
+    path("api/dashboard/<pk>/", views.ModelViewSet.as_view({"post":"open"})),
+    path('health/', views.health_check, name='health_check'),
 ]
 
 urlpatterns += [

@@ -1,4 +1,5 @@
 from django.db import models
+from .models.base import BaseModel
 
 model_types = [
     ("RG", "Regression"),
@@ -6,7 +7,7 @@ model_types = [
 ]
 
 
-class Model(models.Model):
+class Model(BaseModel):
     model_name = models.CharField(max_length=100, blank=False, null=False)
     model_type = models.CharField(max_length=2, choices=model_types)
     algorithm_name = models.CharField(max_length=100, blank=True, null=True)
@@ -18,6 +19,6 @@ class Model(models.Model):
         return self.model_name
 
 
-class ModelDescription(models.Model):
+class ModelDescription(BaseModel):
     model = models.OneToOneField(Model, on_delete=models.CASCADE)
     description = models.JSONField()

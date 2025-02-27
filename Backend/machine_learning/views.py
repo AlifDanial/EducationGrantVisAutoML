@@ -204,3 +204,10 @@ class FlaskModelViewSet(viewsets.ViewSet):
                     train_csv_path) + ' ' +'"'+ project_title +'"'+ ' ' + str(
                     auto) + ' ' +'"'+ id_column +'"'+ ' ' +'"'+ predict +'"'+ ' ' + '"' + str(drop) + '"' + ' ' +'"'+ str(
                     descriptions) +'"'+ ' ' + str(algo) + ' ' + str(model_id) + ' ' +'"'+ str(unit) +'"'+ ' ' + '"' + str(split) + '"')
+
+@api_view(['GET'])
+def health_check(request):
+    """
+    Health check endpoint for Kubernetes probes.
+    """
+    return JsonResponse({'status': 'healthy'})

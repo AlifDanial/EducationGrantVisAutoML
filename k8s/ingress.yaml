@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: visautoml-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  tls:
+  - hosts:
+    - visautoml.com
+    - api.visautoml.com
+    - dash.visautoml.com
+    secretName: visautoml-tls
+  rules:
+  - host: visautoml.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: visautoml-frontend
+            port:
+              number: 3000
+  - host: api.visautoml.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: visautoml-backend
+            port:
+              number: 8000
+  - host: dash.visautoml.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: visautoml-dash
+            port:
+              number: 8050 

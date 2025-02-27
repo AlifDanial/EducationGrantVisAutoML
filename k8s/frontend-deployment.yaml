@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visautoml-frontend
+  labels:
+    app: visautoml
+    tier: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: visautoml
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: visautoml
+        tier: frontend
+    spec:
+      containers:
+      - name: react
+        image: visautoml-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_API_URL
+          value: "https://api.visautoml.com"
+        - name: REACT_APP_DASH_URL
+          value: "https://dash.visautoml.com"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 15 
