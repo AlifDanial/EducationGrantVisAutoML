@@ -1,0 +1,33 @@
+{
+  "name": "EduGrantVisAutoML-Backend",
+  "description": "Django backend for EduGrantVisAutoML application",
+  "repository": "https://github.com/yourusername/EduGrantVisAutoML",
+  "keywords": ["python", "django", "machine-learning", "automl"],
+  "env": {
+    "SECRET_KEY": {
+      "description": "A secret key for Django",
+      "generator": "secret"
+    },
+    "DEBUG": {
+      "description": "Debug mode",
+      "value": "False"
+    },
+    "FRONTEND_URL": {
+      "description": "URL of the frontend application",
+      "value": "https://your-frontend-app.herokuapp.com"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:hobby-dev"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "python manage.py migrate && python manage.py collectstatic --noinput"
+  }
+}

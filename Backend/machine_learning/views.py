@@ -1,20 +1,22 @@
 import os
 import traceback
 
-from rest_framework import viewsets, status, decorators
+from rest_framework import viewsets, status, decorators, views
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from django.shortcuts import render
+from django.http import JsonResponse
+from multiprocessing import Process
+import threading
+import pandas as pd
+import os
+
+
 from .serializers import ModelSerializer, ModelDescriptionSerializer
 from .models import Model, ModelDescription
 from .review import get_review
 from .regression_custom_explainer import finishing
-from django.shortcuts import render
-from multiprocessing import Process
-import threading
 from .dashboard import runModel
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-# import openai
 
 def index(request):
     # print(request)
@@ -42,11 +44,15 @@ def dashboard(request, pk):
 
 #     return JsonResponse({'response': response.choices[0].text})
 
+
+
+
 class ModelViewSet(viewsets.ViewSet):
 
     def list(self, request):
-        models = Model.objects.all().order_by('-id')
-        print("Getting models >>>",models)
+        # Filter models by the current user session
+        models = Model.objects.filter(session=request.user_session).order_by('-id')
+        print("Getting models >>>", models)
         serializer = ModelSerializer(models, many=True)
         return Response(serializer.data)
 
@@ -56,6 +62,10 @@ class ModelViewSet(viewsets.ViewSet):
             if serializer.is_valid():
                 print("saving....", request.data)
                 model = serializer.save()
+                # Associate the model with the current user session
+                model.session = request.user_session
+                model.save()
+                
                 global saved_id
                 saved_id = model.id
                 print("Saved --------")
@@ -76,39 +86,61 @@ class ModelViewSet(viewsets.ViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk):
-        Model.objects.get(id=pk).delete()
-        models = Model.objects.all().order_by('-id')
-        serializer = ModelSerializer(models, many=True)
-        return Response(serializer.data)
+        try:
+            # Only allow deletion of models associated with the current user session
+            model = Model.objects.get(id=pk, session=request.user_session)
+            model.delete()
+            models = Model.objects.filter(session=request.user_session).order_by('-id')
+            serializer = ModelSerializer(models, many=True)
+            return Response(serializer.data)
+        except Model.DoesNotExist:
+            return Response({"error": "Model not found or not owned by current session"}, 
+                           status=status.HTTP_404_NOT_FOUND)
     
     def open(self, request, pk):
-        print("dashboard >>>>>", pk)
+        try:
+            # Only allow access to models associated with the current user session
+            model = Model.objects.get(id=pk, session=request.user_session)
+            print("dashboard >>>>>", pk)
 
-        os.system("npx kill-port 8050")
-        os.system('explainerdashboard run '+pk+'.yaml --no-browser')
-        # os.system("explainerdashboard run explainer.joblib")
+            os.system("npx kill-port 8050")
+            os.system('explainerdashboard run '+pk+'.yaml --no-browser')
+            # os.system("explainerdashboard run explainer.joblib")
 
-        return Response({"response":"Success"})
+            return Response({"response":"Success"})
+        except Model.DoesNotExist:
+            return Response({"error": "Model not found or not owned by current session"}, 
+                           status=status.HTTP_404_NOT_FOUND)
 
 
 class ModelDescriptionViewSet(viewsets.ViewSet):
 
     def update(self, request, pk):
-        description = ModelDescription.objects.get(id=pk)
-        serializer = ModelDescriptionSerializer(description, request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Only allow updates to descriptions associated with the current user session's models
+            description = ModelDescription.objects.get(
+                id=pk, 
+                model__session=request.user_session
+            )
+            serializer = ModelDescriptionSerializer(description, request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ModelDescription.DoesNotExist:
+            return Response({"error": "Description not found or not owned by current session"}, 
+                           status=status.HTTP_404_NOT_FOUND)
 
 
 class FlaskModelViewSet(viewsets.ViewSet):
     # {"model": 12, "id_column": "Survived", "prediction_column": "PassengerId", "not_to_use_columns": ["Name"],
     #        "projectTitle": "test", "algo": "", "auto": 1, "unit": "", "description": 12}
     def list(self, request):
-        models = Model.objects.all().order_by('-id')
+        # Filter models by the current user session
+        models = Model.objects.filter(session=request.user_session).order_by('-id')
         for each_item in models:
             if each_item.model_type == "RG":
                 each_item.model_type = "Regression"
@@ -119,10 +151,19 @@ class FlaskModelViewSet(viewsets.ViewSet):
 
     def create(self, request):
         try:
-            model_obj = Model.objects.get(id=request.data["model"])
+            # Only allow access to models associated with the current user session
+            model_obj = Model.objects.get(
+                id=request.data["model"],
+                session=request.user_session
+            )
             model_id = request.data["model"]
             model = model_obj.model_type
-            description_obj = ModelDescription.objects.get(id=request.data["description"])
+            
+            # Only allow access to descriptions associated with the current user session's models
+            description_obj = ModelDescription.objects.get(
+                id=request.data["description"],
+                model__session=request.user_session
+            )
             train_csv_path = model_obj.data_set
             project_title = request.data["projectTitle"]
             auto = request.data["auto"]

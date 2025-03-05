@@ -26,7 +26,7 @@ const HtmlTooltip = styled(({ className, ...props }) => (
   },
 }));
 
-const DraggableElement = ({ prefix, elements, id, tooltip }) => {
+const DraggableElement = ({ prefix, elements, id, tooltip, dataQualityAlerts }) => {
   return (
     <Box
       sx={{
@@ -44,7 +44,7 @@ const DraggableElement = ({ prefix, elements, id, tooltip }) => {
           alignItems: "center",
         }}
       >
-          <Typography
+          {/* <Typography
             sx={{ 
               padding:"0.2rem",
               fontWeight: 550, 
@@ -53,12 +53,12 @@ const DraggableElement = ({ prefix, elements, id, tooltip }) => {
             }}
           >
             {prefix}
-          </Typography>        
+          </Typography>         */}
           
-          <HtmlTooltip
+          {/* <HtmlTooltip
           placement="right" title={tooltip}>
               <HelpIcon fontSize="small" sx={{ color: "grey" }} />
-          </HtmlTooltip>
+          </HtmlTooltip> */}
       </Box>
 
 <Droppable droppableId={`${id}`}>
@@ -69,16 +69,28 @@ const DraggableElement = ({ prefix, elements, id, tooltip }) => {
       style={{
         position: 'relative',
         padding: 4,
-        ...(id === "Prediction Column" || id === "ID Column" || id === "Columns not to use"
+        ...(id === "Prediction Column" || id === "ID Column" || id === "Columns not to use" || id === "Columns to use"
           ? {              
               borderRadius: '8px',
               minHeight: 50,
+              maxHeight: id === "Columns not to use" || id === "Columns to use" ? "300px" : "auto",
+              overflowY: id === "Columns not to use" || id === "Columns to use" ? "auto" : "visible",
+              msOverflowStyle: 'none',  // Hide scrollbar in IE/Edge
+              scrollbarWidth: 'none',    // Hide scrollbar in Firefox
+              WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
               backgroundColor: '#fffffe', 
               border: id === "Prediction Column" && elements.length === 0 ? "1px dashed #bf0000" : "1px dashed gray",
             }
           : {}),
       }}
     >
+      <style>
+        {`
+          div[data-rbd-droppable-id="${id}"]::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
       {elements.map((item, index) => (
         <Draggable key={item.id} draggableId={item.id} index={index}>
           {(provided) => (
@@ -100,8 +112,11 @@ const DraggableElement = ({ prefix, elements, id, tooltip }) => {
                 border: '1px solid #ddd', // Optional: if you want borders around list items
               }}
             >
-              {/* Your ListItem component or content */}
-              {item.content}
+              <ListItem 
+                item={item} 
+                index={index} 
+                alerts={dataQualityAlerts?.[item.content] || []}
+              />
               <DragIndicatorIcon />
             </div>
           )}

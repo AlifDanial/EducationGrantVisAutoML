@@ -34,14 +34,14 @@ def get_review(file):
     json_data = []
     for row in file:
         json_data.append(row)
-    profile = ProfileReport(
-        file,
-        title="Analyzed Data",
-        samples=None,
-        correlations=None,
-        interactions=None, 
-        progress_bar = True,
-        html={"navbar_show": False,
-              "minify_html": True,}
-    ).to_html()
-    return {"result": result, "fileFitForUse": fileFitForUse, "rows": rows, "columnsLength": len(columns), "columns": columns, "unfitColumns": fit_for_use.count(False), "unfitRows": nullRows, "histogram": file, "profile":profile}
+    # profile = ProfileReport(
+    #     file,
+    #     title="Analyzed Data",
+    #     samples=None,
+    #     correlations=None,
+    #     interactions=None, 
+    #     progress_bar = True,
+    #     html={"navbar_show": False,
+    #           "minify_html": True,}
+    # ).to_html()
+    return {"result": result, "fileFitForUse": fileFitForUse, "rows": rows, "columnsLength": len(columns), "columns": columns, "unfitColumns": fit_for_use.count(False), "unfitRows": nullRows, "histogram": file}

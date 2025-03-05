@@ -824,6 +824,7 @@ if __name__ == '__main__':
     db = ExplainerDashboard(explainer,boostrap=dbc.themes.LITERA,title=projecttitle,hide_poweredby=True,plot_sample=1000,
                             depth=10, 
                             header_hide_selector=True,hide_header=True,
+                            shap_dependence=False,
                             shap_interaction=False,decision_trees=False,
                             hide_globalcutoff=True, hide_precision=True,
                             hide_classification=True, hide_rocauc=True,

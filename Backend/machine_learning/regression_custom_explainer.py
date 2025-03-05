@@ -834,6 +834,7 @@ if __name__ == '__main__':
         header_hide_selector=True, 
         hide_header=True, 
         shap_interaction=False,
+        shap_dependence=False,
         decision_trees=False,
         hide_pdp=True,
         hide_whatifpdp=True,

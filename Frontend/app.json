@@ -1,0 +1,17 @@
+{
+  "name": "EduGrantVisAutoML-Frontend",
+  "description": "React frontend for EduGrantVisAutoML application",
+  "repository": "https://github.com/yourusername/EduGrantVisAutoML",
+  "keywords": ["node", "react", "javascript", "automl"],
+  "env": {
+    "REACT_APP_API_URL": {
+      "description": "URL of the backend API",
+      "value": "https://your-backend-app.herokuapp.com"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+} 

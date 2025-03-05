@@ -1,5 +1,5 @@
-import { Box, Grid, Button } from "@mui/material";
-import { useEffect, useState } from "react";
+import { Box } from "@mui/material";
+import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { reset } from "../actions/modelAction";
 import Navbar from "../components/common/Navbar";
@@ -7,29 +7,19 @@ import Body from "../components/home/Body";
 import "../App.css";
 
 const Home = () => {
-  const [sidebarOpen, setSideBarOpen] = useState(false);
-
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(reset());
-  }, []);
-
-  const handleViewSidebar = () => {
-    setSideBarOpen(!sidebarOpen);
-  };
+  }, [dispatch]);
 
   return (
-    // <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <Grid container sx={{ display: "flex", flexWrap: "nowrap !important" }}>
-        <Grid item>
-          <Navbar isOpen={sidebarOpen} toggleSidebar={handleViewSidebar}/> 
-        </Grid>
-        <Grid item className="main">
-          <Body />
-        </Grid>
-      </Grid>
-    // </Box>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Navbar />
+      <Box className="main">
+        <Body />
+      </Box>
+    </Box>
   );
 };
 

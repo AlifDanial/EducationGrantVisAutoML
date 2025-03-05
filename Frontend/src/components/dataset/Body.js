@@ -48,6 +48,12 @@ import ml3 from "../../static/images/typeofml.gif";
 import sl from "../../static/images/supervisedl.gif";
 import cl from "../../static/images/cl.gif";
 import rg from "../../static/images/rg.gif";
+import titanic from "../../static/images/titanic.jpg";
+import stroke from "../../static/images/stroke.jpg";
+import income from "../../static/images/income.jpg";
+import LifeExpectancy from "../../static/images/lifeexpect.jpg";
+import MedicalCost from "../../static/images/medicalcost.jpg";
+import CarPrice from "../../static/images/carprice.jpg";
 import EducationalFAB from '../common/Fab';
 import QuizDialog from '../common/QuizDialog';
 import { 
@@ -95,19 +101,19 @@ const regressionAlgos = [
     name: "Medical Expenses Across Families in US",
     value: "/datasets/Regression/MedicalCost_Prediction_Regression.csv",
     tooltip:
-      "The dataset provides details on individuals within families. The primary aim is to predict the family's medical expenses (charges column), offering insights into how these attributes contribute to healthcare costs.",
+      "The dataset contains individual and family attributes, with the goal of predicting medical expenses (charges column).",
   },
   {
     name: "Car Prices Across Manufacturers, Models and Build",
     value: "/datasets/Regression/CarPrice_Prediction_Regression.csv",
     tooltip:
-      "The dataset comprises details about cars. The primary goal is to predict the car's cost (price column), revealing the relationships between these attributes and car prices.",
+      "The dataset contains vehicle specifications and details, with the goal of predicting car prices (price column).",
   },
   {
     name: "Life Expectancy Across Countries, Years and Disease",
     value: "/datasets/Regression/LifeExpectancy_Prediction_Regression.csv",
     tooltip:
-      "The dataset provides Life Expectancy information from various countries. The primary aim is to predict life expectancy (Life expectancy column), unveiling the relationships between these attributes and life expectancy outcomes.",
+      "The dataset contains country health metrics and statistics, with the goal of predicting life expectancy (Life expectancy column).",
   },
 ];
 
@@ -122,13 +128,13 @@ const classificationAlgos = [
     name: "Stroke Risk, Likeliness to Suffer a Stroke",
     value: "/datasets/Classification/Stroke_Prediction_Classification.csv",
     tooltip:
-      "The dataset contains individual characteristics, with the goal of predicting the likelihood of experiencing a stroke (stroke),",
+      "The dataset contains individual health and demographic attributes, with the goal of predicting stroke likelihood (stroke column).",
   },
   {
     name: "Titanic Survival, Chances to Survive the Tragedy",
     value: "/datasets/Classification/Titanic_Survival_Classification.csv",
     tooltip:
-      "The dataset includes individual attributes, with the aim of predicting passenger survival (Survived).",
+      "The dataset contains passenger attributes and information, with the goal of predicting survival from the disaster (Survived column).",
   },  
 ];
 
@@ -450,6 +456,7 @@ const openPopup = (index) => {
   const handleAlgoClick = async (algoValue) => {
     try {
       console.log('Algo Value:', algoValue); 
+      setAlgoValue(algoValue); // Set the algoValue state
       const response = await fetch(`${algoValue}`);
       
       const csvData = await response.text();
@@ -457,7 +464,7 @@ const openPopup = (index) => {
       const csvBlob = new Blob([csvData], { type: 'text/csv' });
 
       // Create a File object from the Blob
-      const csvFile = new File([csvBlob], `${algoValue.id}.csv`, { type: 'text/csv' });
+      const csvFile = new File([csvBlob], `${algoValue.split('/').pop()}`, { type: 'text/csv' });
 
       // Call onSelect with the File object
       onSelect([csvFile]);
@@ -592,7 +599,7 @@ const openPopup = (index) => {
             <Typography
                 variant="h4"
               sx={{
-                  fontSize: "1.75rem",
+                  fontSize: { xs: "1.5rem", sm: "1.75rem", md: "1.2rem" },
                   fontWeight: 700,
                   fontFamily: "'SF Pro Display', sans-serif",
                   color: "#1E293B",
@@ -603,7 +610,7 @@ const openPopup = (index) => {
               </Typography>
               <Typography
                 sx={{
-                  fontSize: "0.95rem",
+                  fontSize: { xs: "0.8rem", sm: "0.95rem", md: ".95rem" },
                   fontWeight: 400,
                   fontFamily: "'SF Pro Display', sans-serif",
                   color: "#64748B"
@@ -656,21 +663,21 @@ const openPopup = (index) => {
                   marginRight: 12
                 }}
               />
-        <Typography
-          sx={{
-            fontSize: "1.1rem",
+              <Typography
+                sx={{
+                  fontSize: "1.1rem",
                   fontWeight: 600,
-                fontFamily: "'SF Pro Display', sans-serif",
+                  fontFamily: "'SF Pro Display', sans-serif",
                   color: "#1E293B"
-          }}
-        >
+                }}
+              >
                 {model.name}
-        </Typography>
+              </Typography>
             </Paper>
           </CustomTooltip>
-              </Box>
+        </Box>
 
-        {/* Import Section */}
+        {/* Import Section - First Row */}
         <Box 
           sx={{ 
             display: "flex",
@@ -679,7 +686,7 @@ const openPopup = (index) => {
           }}
         >
           {/* Upload Box */}
-            <Box 
+          <Box 
             sx={{              
               flex: 1,
               display: 'flex',
@@ -699,58 +706,75 @@ const openPopup = (index) => {
             >
               Upload CSV File
             </Typography>
-            <Paper
-              sx={{
-                border: "2px dashed rgba(0, 0, 0, 0.12)",
-                borderRadius: "2px",
-                backgroundColor: "rgba(0, 0, 0, 0.02)",
-                height: "100%",
-                minHeight: "200px"
-              }}
+            <CustomTooltip
+              open={tooltipId === 11 ? true : false}
+              onOpen={handleOpen}
+              onClose={handleClose}
+              title={
+                <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                  <Typography>Uploading your data is simple! Import a CSV file or Select from the Dropdown.</Typography>
+                  <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(10)}>PREVIOUS</Button>
+                    <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(12)}>NEXT</Button>
+                  </Box>
+                </Box>
+              }
+              placement="top"
+              arrow
+            >
+              <Paper
+                sx={{
+                  border: "2px dashed rgba(0, 0, 0, 0.12)",
+                  borderRadius: "2px",
+                  backgroundColor: "rgba(0, 0, 0, 0.02)",
+                  // height: "100%",
+                  minHeight: "200px"
+                }}
               >
-            <DropzoneArea
-                dropzoneText={""}
-                Icon={({ file, iconClassName, classNames }) => (
-                  <Box 
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 2
-                    }}
-                  >
-                  <UploadFileIcon
-                    className={iconClassName}
-                      sx={{ 
-                        fontSize: '48px',
-                        color: '#64748B'
-                      }}
-                    />
-                    <Typography
+                <DropzoneArea
+                  dropzoneText={""}
+                  Icon={({ file, iconClassName, classNames }) => (
+                    <Box 
                       sx={{
-                        fontSize: "0.95rem",
-                        fontWeight: 500,
-                        fontFamily: "'SF Pro Display', sans-serif",
-                        color: "#64748B",
-                        textAlign: 'center'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 2
                       }}
                     >
-                      Drag and drop your CSV file here<br />
-                      or click to browse
-                    </Typography>
-                  </Box>
-                )}
-                filesLimit={1}
-                onChange={onSelect}
-                maxFileSize={30000000}
-                onDelete={onDelete}
-                showPreviewsInDropzone={false}
-                useChipsForPreview
-                previewText="Uploaded file"
-                acceptedFiles={["text/csv"]}
-              />
-            </Paper>
-            </Box>
+                      <UploadFileIcon
+                        className={iconClassName}
+                        sx={{ 
+                          fontSize: '48px',
+                          color: '#64748B'
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: "0.95rem",
+                          fontWeight: 500,
+                          fontFamily: "'SF Pro Display', sans-serif",
+                          color: "#64748B",
+                          textAlign: 'center'
+                        }}
+                      >
+                        Drag and drop your CSV file here<br />
+                        or click to browse
+                      </Typography>
+                    </Box>
+                  )}
+                  filesLimit={1}
+                  onChange={onSelect}
+                  maxFileSize={30000000}
+                  onDelete={onDelete}
+                  showPreviewsInDropzone={false}
+                  useChipsForPreview
+                  previewText="Uploaded file"
+                  acceptedFiles={["text/csv"]}
+                />
+              </Paper>
+            </CustomTooltip>
+          </Box>
 
           {/* Divider */}
           <Box 
@@ -765,7 +789,6 @@ const openPopup = (index) => {
               sx={{
                 width: 0.2,
                 height: '100%',
-                // backgroundColor: 'rgba(0, 0, 0, 0.08)',
                 my: 2
               }}
             />
@@ -785,12 +808,11 @@ const openPopup = (index) => {
               sx={{
                 width: .2,
                 height: '100%',
-                // backgroundColor: 'rgba(0, 0, 0, 0.08)',
                 my: 2
               }}
             />
           </Box>
-
+          
           {/* Dataset Selection */}
           <Box 
             sx={{ 
@@ -799,7 +821,7 @@ const openPopup = (index) => {
               flexDirection: 'column',
               gap: 2
             }}
-          >
+          >           
             <Typography
               variant="h6"
               sx={{
@@ -812,82 +834,154 @@ const openPopup = (index) => {
             >
               Choose from Sample Datasets
             </Typography>
-            <TextField                
-              select
-              fullWidth
-              label="Select a Dataset"
-              value={algoValue}
-              onChange={handleAlgoChange}                              
-              sx={{
-                '& .MuiOutlinedInput-root': {
+            
+            {/* Dataset Preview with Image and Description */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 2,
+              height: '100%'
+            }}>
+              {/* Dynamic Image */}
+              <Box 
+                sx={{ 
+                  height: '140px', 
                   borderRadius: '12px',
-                  backgroundColor: '#FFFFFF'
-                }
-              }}                          
-              > 
-               {model.type === "Regression" ? (
-                regressionAlgos.map((algo) => (                  
-                  <MenuItem 
-                    key={algo.value} 
-                    value={algo.value} 
-                    onClick={() => handleAlgoClick(algo.value)}
-                    sx={{
-                      fontFamily: "'SF Pro Display', sans-serif",
-                      py: 1.5
-                    }}
-                  > 
-                    <HtmlTooltip 
-                      placement="right" 
-                      title={algo.tooltip}
-                    > 
-                      <Box sx={{ width: "100%" }}>
-                        <Typography 
-                          sx={{
-                            fontFamily: "'SF Pro Display', sans-serif",
-                            fontWeight: 500
-                          }}
-                        >
-                          {algo.name}
-                        </Typography>   
-                      </Box>                         
-                      </HtmlTooltip>     
-                  </MenuItem>                 
-                ))
-              ) : (
-                classificationAlgos.map((algo) => (
-                  <MenuItem 
-                    key={algo.value} 
-                    value={algo.value} 
-                    onClick={() => handleAlgoClick(algo.value)}
-                    sx={{
-                      fontFamily: "'SF Pro Display', sans-serif",
-                      py: 1.5
-                    }}
-                  > 
-                    <HtmlTooltip 
-                      placement="right" 
-                      title={algo.tooltip}
-                    >              
-                      <Box sx={{ width: "100%" }}>
-                        <Typography 
-                          sx={{
-                            fontFamily: "'SF Pro Display', sans-serif",
-                            fontWeight: 500
-                          }}
-                        >
-                          {algo.name}
-                        </Typography>   
-                      </Box>                
-                      </HtmlTooltip>     
-                  </MenuItem>                 
-                ))
-              )}
-              </TextField>            
-            </Box>            
+                  overflow: 'hidden',
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#f8fafc'
+                }}
+              >
+                <img 
+                  src={model.type === "Regression" 
+                    ? (algoValue ? 
+                        (algoValue.includes("MedicalCost") ? MedicalCost : 
+                         algoValue.includes("CarPrice") ? CarPrice : 
+                         algoValue.includes("LifeExpectancy") ? LifeExpectancy : MedicalCost) 
+                      : MedicalCost)
+                    : (algoValue ? 
+                        (algoValue.includes("Income") ? income : 
+                         algoValue.includes("Stroke") ? stroke : 
+                         algoValue.includes("Titanic") ? titanic : income) 
+                      : income)
+                  }
+                  alt="Dataset preview"
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '100%', 
+                    objectFit: 'contain',
+                    opacity: algoValue ? 1 : 0.3
+                  }}
+                />
+              </Box>
+              
+              {/* Dataset Description */}
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  sx={{
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    color: "#1E293B",
+                    mb: 0.5
+                  }}
+                >
+                  {algoValue ? (model.type === "Regression" 
+                    ? regressionAlgos.find(algo => algo.value === algoValue)?.name 
+                    : classificationAlgos.find(algo => algo.value === algoValue)?.name) 
+                    : "Select a dataset"}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.85rem",
+                    fontWeight: 400,
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    color: "#64748B",
+                    height: '40px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical'
+                  }}
+                >
+                  {algoValue ? (model.type === "Regression" 
+                    ? regressionAlgos.find(algo => algo.value === algoValue)?.tooltip 
+                    : classificationAlgos.find(algo => algo.value === algoValue)?.tooltip) 
+                    : "Choose a dataset from the options below"}
+                </Typography>
+              </Box>
+              
+              {/* Tabbed Button Group */}
+              <Box 
+                sx={{ 
+                  display: 'flex',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  border: '1px solid rgba(0, 0, 0, 0.12)'
+                }}
+              >
+                {model.type === "Regression" ? (
+                  regressionAlgos.map((algo, index) => (
+                    <Button
+                      key={algo.value}
+                      onClick={() => handleAlgoClick(algo.value)}
+                      sx={{
+                        flex: 1,
+                        py: 1.5,
+                        borderRadius: 0,
+                        borderRight: index < regressionAlgos.length - 1 ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
+                        backgroundColor: algoValue === algo.value ? '#2563EB' : 'transparent',
+                        color: algoValue === algo.value ? 'white' : '#64748B',
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        fontWeight: 500,
+                        textTransform: 'none',
+                        '&:hover': {
+                          backgroundColor: algoValue === algo.value ? '#1D4ED8' : 'rgba(0, 0, 0, 0.04)'
+                        }
+                      }}
+                    >
+                      {algo.value.includes("MedicalCost") ? "Medical Costs" : 
+                       algo.value.includes("CarPrice") ? "Car Prices" : 
+                       algo.value.includes("LifeExpectancy") ? "Life Expectancy" : `Dataset ${index + 1}`}
+                    </Button>
+                  ))
+                ) : (
+                  classificationAlgos.map((algo, index) => (
+                    <Button
+                      key={algo.value}
+                      onClick={() => handleAlgoClick(algo.value)}
+                      sx={{
+                        flex: 1,
+                        py: 1.5,
+                        borderRadius: 0,
+                        borderRight: index < classificationAlgos.length - 1 ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
+                        backgroundColor: algoValue === algo.value ? '#2563EB' : 'transparent',
+                        color: algoValue === algo.value ? 'white' : '#64748B',
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        fontWeight: 500,
+                        textTransform: 'none',
+                        '&:hover': {
+                          backgroundColor: algoValue === algo.value ? '#1D4ED8' : 'rgba(0, 0, 0, 0.04)'
+                        }
+                      }}
+                    >
+                      {algo.value.includes("Income") ? "Income" : 
+                       algo.value.includes("Stroke") ? "Stroke Risk" : 
+                       algo.value.includes("Titanic") ? "Titanic" : `Dataset ${index + 1}`}
+                    </Button>
+                  ))
+                )}
+              </Box>
+            </Box>
           </Box>
+        </Box>
 
-        {/* Preview Section */}
-              <Box>
+        {/* Preview Section - Second Row */}
+        <Box sx={{ mt: 4 }}>
           <Box 
             sx={{ 
               display: 'flex',
@@ -897,30 +991,48 @@ const openPopup = (index) => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontSize: "1.2rem",
-                  fontWeight: 600,
-                  fontFamily: "'SF Pro Display', sans-serif",
-                  color: "#1E293B"
-                }}
+              <CustomTooltip
+                open={tooltipId === 12 ? true : false}
+                onOpen={handleOpen}
+                onClose={handleClose}
+                title={
+                  <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                    <Typography>Once uploaded, preview your data to ensure everything
+                      looks right. This is the first look at your dataset.</Typography>
+                    <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(11)}>PREVIOUS</Button>
+                      <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(13)}>NEXT</Button>
+                    </Box>
+                  </Box>
+                }
+                placement="top"
+                arrow
               >
-                Dataset Preview
-              </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: "1.2rem",
+                    fontWeight: 600,
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    color: "#1E293B"
+                  }}
+                >
+                  Dataset Preview
+                </Typography>
+              </CustomTooltip>
               <HtmlTooltip 
                 placement="right"
                 title={
                   <React.Fragment>
-            <Typography
-              sx={{
+                    <Typography
+                      sx={{
                         fontWeight: "bold", 
-                fontFamily: "'SF Pro Display', sans-serif",
+                        fontFamily: "'SF Pro Display', sans-serif",
                         mb: 1
-              }}
-            >
+                      }}
+                    >
                       Column Types Guide
-            </Typography>
+                    </Typography>
                     <Box sx={{ mb: 2 }}>
                       <Typography 
                         sx={{ 
@@ -948,7 +1060,7 @@ const openPopup = (index) => {
                       <Typography sx={{ fontSize: '0.9rem' }}>
                         Unique record identifiers (e.g., ID, CustomerID)
                       </Typography>
-                  </Box>
+                    </Box>
                   </React.Fragment>
                 }
               >
@@ -960,7 +1072,7 @@ const openPopup = (index) => {
                   }} 
                 />
               </HtmlTooltip>
-                    </Box>
+            </Box>
             <Button
               variant="contained"
               disabled={!disabled && fileName === ""}
@@ -992,7 +1104,34 @@ const openPopup = (index) => {
           >
             Review your data and identify target and identifier columns
           </Typography>
-
+          <CustomTooltip
+              open={tooltipId === 13 || tooltipId === 14 ? true : false}
+              onOpen={handleOpen}
+              onClose={handleClose}
+              title={
+                tooltipId === 13 ? (
+                  <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                    <Typography>Identify the prediction column: This is what you want to predict.
+                      It could be the price of a house, whether an email is spam, etc.</Typography>
+                    <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(12)}>PREVIOUS</Button>
+                      <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(14)}>NEXT</Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                    <Typography>Identify the relevant columns: These are factors that might influence your
+                      prediction column. For instance, the number of rooms might affect a house's price.</Typography>
+                    <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(13)}>PREVIOUS</Button>
+                      <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(15)}>NEXT</Button>
+                    </Box>
+                  </Box>
+                )
+              }
+              placement="top"
+              arrow
+            >
           <Paper 
             sx={{
               borderRadius: '16px',
@@ -1002,49 +1141,118 @@ const openPopup = (index) => {
               maxHeight: '400px'
             }}
           >
-            <Table 
-              stickyHeader 
-              sx={{
-                    '& .MuiTableCell-root': {
-                  padding: '12px 16px',
-                  minWidth: '120px',
-                  maxWidth: '300px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontFamily: "'SF Pro Display', sans-serif",
-                  fontSize: '0.9rem'
-                    },
-                    '& .MuiTableCell-head': {
-                  backgroundColor: '#F8FAFC',
-                  fontWeight: 600,
-                  color: '#1E293B',
-                  borderBottom: '2px solid rgba(0, 0, 0, 0.08)'
+            <Box 
+              sx={{ 
+                overflowX: 'auto',
+                '&::-webkit-scrollbar': {
+                  height: '8px',
                 },
-                '& .MuiTableBody-root .MuiTableRow-root:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.02)'
-                }
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'rgba(37, 99, 235, 0.5)',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                  },
+                },
+                // Firefox scrollbar styling
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(37, 99, 235, 0.5) rgba(0, 0, 0, 0.05)'
               }}
             >
-                    <TableHead>
-                        <TableRow>
-                  {columns.map((rows, index) => (
-                    <TableCell key={index}>{rows}</TableCell>
-                  ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                {values.slice(0, 5).map((value, index) => (
-                                <TableRow key={index}>
-                    {value.map((val, i) => (
-                      <TableCell key={i}>{val}</TableCell>
+              <Table 
+                stickyHeader 
+                sx={{
+                  tableLayout: 'auto',
+                  minWidth: '100%',
+                  '& .MuiTableCell-root': {
+                    padding: '12px 16px',
+                    minWidth: '120px',
+                    maxWidth: '300px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    fontSize: '0.9rem'
+                  },
+                  '& .MuiTableCell-head': {
+                    backgroundColor: '#F8FAFC',
+                    fontWeight: 600,
+                    color: '#1E293B',
+                    borderBottom: '2px solid rgba(0, 0, 0, 0.08)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1
+                  },
+                  '& .MuiTableBody-root .MuiTableRow-root:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.02)'
+                  },
+                  '& .MuiTableRow-root': {
+                    transition: 'background-color 0.2s ease'
+                  }
+                }}
+              >
+                <TableHead>
+                  <TableRow>
+                    {columns.map((column, index) => (
+                      <TableCell 
+                        key={index}
+                        sx={{
+                          position: 'relative',
+                          '&::after': index < columns.length - 1 ? {
+                            content: '""',
+                            position: 'absolute',
+                            right: 0,
+                            top: '25%',
+                            height: '50%',
+                            width: '1px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.08)'
+                          } : {}
+                        }}
+                      >
+                        {column}
+                      </TableCell>
                     ))}
-                                </TableRow>
-                ))}
-                    </TableBody>
-                </Table>
-          </Paper>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {values.slice(0, 5).map((value, index) => (
+                    <TableRow 
+                      key={index}
+                      sx={{
+                        backgroundColor: index % 2 === 0 ? 'rgba(0, 0, 0, 0.01)' : 'transparent'
+                      }}
+                    >
+                      {value.map((val, i) => (
+                        <TableCell 
+                          key={i}
+                          sx={{
+                            position: 'relative',
+                            '&::after': i < value.length - 1 ? {
+                              content: '""',
+                              position: 'absolute',
+                              right: 0,
+                              top: '25%',
+                              height: '50%',
+                              width: '1px',
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                            } : {}
+                          }}
+                        >
+                          {val}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Box>
+          </Paper>
+          </CustomTooltip>
+        </Box>
       </Paper>
 
       <EditDialog open={openEdit} setOpen={setOpenEdit} modelName={model.name} />
