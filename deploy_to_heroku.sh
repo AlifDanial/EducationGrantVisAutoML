@@ -6,8 +6,8 @@
 set -e
 
 # Configuration - Replace these with your app names
-BACKEND_APP_NAME="your-backend-app-name"
-FRONTEND_APP_NAME="your-frontend-app-name"
+BACKEND_APP_NAME="visautoml-backend"
+FRONTEND_APP_NAME="visautoml-frontend"
 
 echo "=== Starting deployment to Heroku ==="
 
@@ -30,7 +30,7 @@ fi
 # Add PostgreSQL addon
 if ! heroku addons:info postgresql --app $BACKEND_APP_NAME &> /dev/null; then
     echo "Adding PostgreSQL addon"
-    heroku addons:create heroku-postgresql:hobby-dev --app $BACKEND_APP_NAME
+    heroku addons:create heroku-postgresql:essential-0 --app $BACKEND_APP_NAME
 else
     echo "PostgreSQL addon already exists"
 fi
