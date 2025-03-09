@@ -197,9 +197,19 @@ const Navbar = () => {
         backgroundColor: 'white', 
         color: 'black',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        height: '80px'
+        height: '80px',
+        '@media (max-width: 990px)': {
+          width: '990px',
+          maxWidth: '990px'
+        }
       }}>
-        <Container maxWidth="xl" sx={{ height: '100%' }}>
+        <Container maxWidth="xl" sx={{ 
+          height: '100%',
+          '@media (max-width: 990px)': {
+            width: '990px',
+            maxWidth: '990px'
+          }
+        }}>
           <Toolbar disableGutters sx={{ 
             minHeight: '64px !important',
             height: '100%',

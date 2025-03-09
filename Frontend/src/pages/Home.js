@@ -16,7 +16,18 @@ const Home = () => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Navbar />
-      <Box className="main">
+      <Box 
+        className="main"
+        sx={{
+          overflowY: 'auto',
+          '@media (max-width: 990px)': {
+            width: '990px',
+            maxWidth: '990px',
+            margin: '0 auto',
+            overflowX: 'auto'
+          }
+        }}
+      >
         <Body />
       </Box>
     </Box>

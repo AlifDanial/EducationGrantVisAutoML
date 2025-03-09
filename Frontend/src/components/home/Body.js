@@ -667,9 +667,14 @@ const Body = () => {
         display: "flex",
         backgroundColor: "#F5F5F5",
         overflowX: "hidden",
-        overflowY: "auto",
+        overflowY: "hidden",
         padding: "20px",
-        position: "relative"
+        position: "relative",
+        '@media (max-width: 990px)': {
+          width: '990px',
+          maxWidth: '990px',
+          margin: '0 auto'
+        }
       }}
     >
       {/* Notifications Container */}
@@ -1100,7 +1105,8 @@ const Body = () => {
                       <Box sx={{ flex: 1 }}>
                         <Typography
                           sx={{
-                            fontSize: { lg: '0.8rem', md: '0.7rem' },
+                            fontSize: { lg: '0.8rem', md: '0.7rem', xs: '0.7rem' },
+                            lineHeight: { lg: '1.2rem', md: '1.2rem', xs: '1rem' },
                             fontWeight: '500',
                             color: 'white',
                             fontFamily: "'SF Pro Display', sans-serif",
@@ -1115,14 +1121,14 @@ const Body = () => {
                               fontSize: '0.7rem',
                               color: 'rgba(255, 255, 255, 0.7)',
                               fontFamily: "'SF Pro Display', sans-serif",
-                              display: { lg: 'block', md: 'none' }
+                              display: { lg: 'block', md: 'none', xs: 'none' }
                             }}
                           >
                             {algo.modelCount} models
                           </Typography>
                           <Box
                             sx={{
-                              display: { lg: 'flex', md: 'none' },
+                              display: { lg: 'flex', md: 'none', xs: 'none' },
                               alignItems: 'center',
                               gap: 0.5,
                               color: algo.trend > 0 ? '#4CAF50' : '#f44336'
@@ -1236,7 +1242,7 @@ const Body = () => {
                           fontSize: '0.9rem',
                           fontWeight: '600',
                           fontFamily: "'SF Pro Display', sans-serif",
-                          display: { lg: 'block', md: 'none' }
+                          display: { lg: 'block', md: 'none', xs: 'none' }
                         }}>
                           Total
                         </Typography>
@@ -1277,7 +1283,7 @@ const Body = () => {
                           <Typography
                             sx={{
                               fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: { xl: "1rem", lg: "0.95rem", md: "0.75rem" },
+                              fontSize: { xl: "1rem", lg: "0.95rem", md: "0.75rem", xs: "0.75rem" },
                               fontWeight: "600",
                               color: "white",
                             }}
@@ -1287,7 +1293,7 @@ const Body = () => {
                           <Typography
                             sx={{
                               fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: { xl: "0.9rem", lg: "0.85rem", md: "0.7rem" },
+                              fontSize: { xl: "0.9rem", lg: "0.85rem", md: "0.7rem", xs: "0.7rem" },
                               fontWeight: "500",
                               color: "rgba(255,255,255,0.7)",
                             }}
@@ -1315,7 +1321,7 @@ const Body = () => {
                           <Typography
                             sx={{
                               fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: { xl: "1rem", lg: "0.95rem", md: "0.75rem" },
+                              fontSize: { xl: "1rem", lg: "0.95rem", md: "0.75rem", xs: "0.75rem" },
                               fontWeight: "600",
                               color: "white",
                             }}
@@ -1325,7 +1331,7 @@ const Body = () => {
                           <Typography
                             sx={{
                               fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: { xl: "0.9rem", lg: "0.85rem", md: "0.7rem" },
+                              fontSize: { xl: "0.9rem", lg: "0.85rem", md: "0.7rem", xs: "0.7rem" },
                               fontWeight: "500",
                               color: "rgba(255,255,255,0.7)",
                             }}
@@ -1380,7 +1386,7 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: { lg: "2.5em", md: "1.9em" },
+                          fontSize: { lg: "2.5em", md: "1.9em", xs: "1.9em" },
                           fontWeight: "700",
                           color: "white",
                         }}
@@ -1436,7 +1442,7 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: { lg: "2.5em", md: "1.9em" },
+                          fontSize: { lg: "2.5em", md: "1.9em", xs: "1.9em" },
                           fontWeight: "700"
                         }}
                       >
@@ -1490,8 +1496,8 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: { lg: "1.5em", md: "1.0em" },
-                          lineHeight: { lg: "1.5em", md: "1.1em" },
+                          fontSize: { lg: "1.5em", md: "1.0em", xs: "1.0em" },
+                          lineHeight: { lg: "1.5em", md: "1.1em", xs: ".9em" },
                           fontWeight: "700",
                         }}
                       >
@@ -1661,7 +1667,7 @@ const Body = () => {
                           sx={{ 
                             borderRadius: "12px", 
                             fontFamily: "'SF Pro Display', sans-serif",
-                            fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.8rem" }
+                            fontSize: { xs: "0.8rem", sm: "0.8rem", md: "0.8rem" }
                           }}
                           onClick={() => setNewModelOpen(true)}
                         >
@@ -1768,7 +1774,7 @@ const Body = () => {
                         fontWeight: "500"
                       }}
                     >
-                      <Chip label="ML Pipeline" sx={{ fontFamily: "'SF Pro Display', sans-serif",borderRadius: "4px" }}/> <Chip label="AutoML" sx={{ fontFamily: "'SF Pro Display', sans-serif",borderRadius: "4px" }} />
+                      <Chip label="ML Pipeline" sx={{ fontFamily: "'SF Pro Display', sans-serif",borderRadius: "4px" }} /> <Chip label="AutoML" sx={{ fontFamily: "'SF Pro Display', sans-serif",borderRadius: "4px" }} />
                     </Box>
                   </Grid>
                   <Grid item xs={12} sx={{ width: "100%", height: "20%", textAlign: "center" }}>
