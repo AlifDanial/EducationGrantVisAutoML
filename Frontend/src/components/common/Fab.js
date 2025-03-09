@@ -9,6 +9,7 @@ import SchoolIcon from '@mui/icons-material/School'
 import AutoStoriesIcon from '@mui/icons-material/AutoStories'
 import QuizIcon from '@mui/icons-material/Quiz'
 import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
 import CircularProgress from '@mui/material/CircularProgress'
 import { 
   Button, 
@@ -178,6 +179,168 @@ const EducationalFAB = ({ open, onToggle, onTaskStart, onTaskComplete, onQuizRed
     { name: "Model\nTraining", tutorialComplete: false, quizComplete: false },
     { name: "Model\nEvaluation", tutorialComplete: false, quizComplete: false }
   ])
+  const { mode } = useSelector((state) => state.model)
+  const devMode = mode > 0
+
+  // Handle closing notification
+  const handleCloseNotification = (e) => {
+    e.stopPropagation()
+    setShowNotification(false)
+  }
+
+  // Get current section index based on page
+  const getCurrentSectionIndex = () => {
+    const pageMapping = {
+      'home': 0,
+      'dataset': 1,
+      'review': 2,
+      'select': 3,
+      'explain': 4
+    }
+    return pageMapping[currentPage] || 0
+  }
+
+  // Get the appropriate tooltipId based on the current page
+  const getPageTooltipId = () => {
+    const tooltipIdMapping = {
+      'home': 2,
+      'dataset': 10,
+      'review': 15,
+      'select': 23,
+      'explain': 34
+    }
+    return tooltipIdMapping[currentPage] || 2
+  }
+
+  useEffect(() => {
+    const sectionIndex = getCurrentSectionIndex()
+    const currentSection = learningProgress[sectionIndex]
+
+    console.log(`[EducationalFAB] Current page: ${currentPage}, Section index: ${sectionIndex}`)
+    console.log(`[EducationalFAB] Current section:`, currentSection)
+    console.log(`[EducationalFAB] Dev mode:`, devMode)
+
+    // In guide mode, automatically start tutorial/quiz
+    if (devMode) {
+      console.log(`[EducationalFAB] Guide mode active, checking tutorial/quiz status`)
+      if (!currentSection.tutorialComplete) {
+        // Automatically start tutorial if not completed
+        const taskId = `tutorial-${sectionIndex + 1}`
+        console.log(`[EducationalFAB] Auto-starting tutorial with taskId: ${taskId}`)
+        handleTaskAction(taskId)
+        // Set tooltipId to 100 temporarily during tutorial
+        dispatch({ type: "TOGGLE_MODE", payload: 100 })
+        console.log(`[EducationalFAB] Set tooltipId to 100 for tutorial`)
+      } else if (!currentSection.quizComplete) {
+        // Automatically start quiz after tutorial completion
+        const taskId = `quiz-${sectionIndex + 1}`
+        console.log(`[EducationalFAB] Auto-starting quiz with taskId: ${taskId}`)
+        handleTaskAction(taskId)
+        // Set tooltipId to 100 temporarily during quiz
+        dispatch({ type: "TOGGLE_MODE", payload: 100 })
+        console.log(`[EducationalFAB] Set tooltipId to 100 for quiz`)
+      } else {
+        // If both tutorial and quiz are completed, set tooltipId to the appropriate page value
+        console.log(`[EducationalFAB] Both tutorial and quiz completed, setting tooltipId to ${getPageTooltipId()}`)
+        dispatch({ type: "TOGGLE_MODE", payload: getPageTooltipId() })
+      }
+    }
+
+    // Show notifications in normal mode
+    if (!devMode) {
+      // Show tutorial notification if tutorial not completed
+      if (!currentSection.tutorialComplete) {
+        setShowNotification(true)
+        setNotificationType("tutorial")
+      }
+      // Show quiz notification if tutorial completed but quiz not completed
+      else if (!currentSection.quizComplete) {
+        setShowNotification(true)
+        setNotificationType("quiz")
+      }
+      // Hide notification if both are completed
+      else {
+        setShowNotification(false)
+      }
+    } else {
+      // Hide notifications in guide mode since we auto-start tasks
+      setShowNotification(false)
+    }
+  }, [currentPage, learningProgress, devMode, dispatch])
+
+  // Monitor changes in guide mode
+  useEffect(() => {
+    // If guide mode is enabled (devMode is true) and both tutorial and quiz are completed
+    if (devMode) {
+      const sectionIndex = getCurrentSectionIndex()
+      const currentSection = learningProgress[sectionIndex]
+      
+      console.log(`[EducationalFAB] Guide mode effect - Section: ${sectionIndex}, Tutorial: ${currentSection.tutorialComplete}, Quiz: ${currentSection.quizComplete}`)
+      
+      if (currentSection.tutorialComplete && currentSection.quizComplete) {
+        // Set tooltipId to the appropriate page value
+        console.log(`[EducationalFAB] Both completed in guide mode, setting tooltipId to ${getPageTooltipId()}`)
+        dispatch({ type: "TOGGLE_MODE", payload: getPageTooltipId() })
+      }
+    }
+  }, [devMode, dispatch, learningProgress, currentPage])
+
+  const getNotificationContent = () => {
+    const contentMap = {
+      'home': {
+        tutorial: {
+          title: 'Start Your ML Journey',
+          description: 'Learn the fundamentals of Machine Learning and AutoML'
+        },
+        quiz: {
+          title: 'Test Your ML Knowledge',
+          description: 'Take a quiz on Machine Learning concepts'
+        }
+      },
+      'dataset': {
+        tutorial: {
+          title: 'Master Data Basics',
+          description: 'Learn about data types, formats, and preprocessing'
+        },
+        quiz: {
+          title: 'Data Basics Quiz',
+          description: 'Test your understanding of data concepts'
+        }
+      },
+      'review': {
+        tutorial: {
+          title: 'Data Preprocessing Guide',
+          description: 'Learn about data cleaning and feature engineering'
+        },
+        quiz: {
+          title: 'Preprocessing Challenge',
+          description: 'Test your data preprocessing knowledge'
+        }
+      },
+      'select': {
+        tutorial: {
+          title: 'Model Training Guide',
+          description: 'Learn about algorithm selection and training'
+        },
+        quiz: {
+          title: 'Training Concepts Quiz',
+          description: 'Test your model training knowledge'
+        }
+      },
+      'explain': {
+        tutorial: {
+          title: 'Model Evaluation Guide',
+          description: 'Learn about metrics and model interpretation'
+        },
+        quiz: {
+          title: 'Evaluation Mastery Quiz',
+          description: 'Test your model evaluation skills'
+        }
+      }
+    }
+
+    return contentMap[currentPage] || contentMap['home']
+  }
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue)
@@ -200,63 +363,200 @@ const EducationalFAB = ({ open, onToggle, onTaskStart, onTaskComplete, onQuizRed
     return { currentTasks, otherTasks }
   }
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowNotification(true)
-      setNotificationType((prev) => (prev === "tutorial" ? "quiz" : "tutorial"))
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [])
-
   const handleTaskAction = (taskId) => {
+    console.log(`[EducationalFAB] handleTaskAction called with taskId: ${taskId}`)
     onTaskStart(taskId)
     onToggle(false)
+    // Set tooltipId to 100 temporarily during tutorial/quiz
+    dispatch({ type: "TOGGLE_MODE", payload: 100 })
+    console.log(`[EducationalFAB] Set tooltipId to 100 in handleTaskAction`)
+  }
+
+  // Handle task completion
+  const handleTaskCompletion = (taskId) => {
+    console.log(`[EducationalFAB] handleTaskCompletion called with taskId: ${taskId}`)
+    // Call the parent component's onTaskComplete function
+    onTaskComplete(taskId)
+    
+    // After task completion, check if both tutorial and quiz are completed
+    const sectionIndex = getCurrentSectionIndex()
+    const currentSection = learningProgress[sectionIndex]
+    
+    console.log(`[EducationalFAB] Task completed - Section: ${sectionIndex}, Tutorial: ${currentSection.tutorialComplete}, Quiz: ${currentSection.quizComplete}`)
+    
+    // If the completed task was a quiz
+    if (taskId.includes('quiz')) {
+      console.log(`[EducationalFAB] Quiz task completed`)
+      // If both tutorial and quiz are now completed, set tooltipId to the appropriate page value
+      if (currentSection.tutorialComplete) {
+        console.log(`[EducationalFAB] Both tutorial and quiz now completed, setting tooltipId to ${getPageTooltipId()}`)
+        dispatch({ type: "TOGGLE_MODE", payload: getPageTooltipId() })
+      }
+    }
   }
 
   const { currentTasks, otherTasks } = getPageTasks()
+  const notificationContent = getNotificationContent()
 
   return (
     <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1300 }}>
-      {/* <Fade
+      <Fade
         in={showNotification}
         timeout={300}
-        style={{ 
-          position: 'absolute', 
-          bottom: 70,
-          right: 0, 
-          width: 256,
-          transformOrigin: 'bottom right',
-          zIndex: 1301
-        }}
       >
-        <Paper 
-          elevation={4} 
-          sx={{ 
-            p: 2, 
-            mb: 1, 
-            bgcolor: 'background.paper'
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 80,
+            right: 0,
+            width: 280,
+            zIndex: 1301,
+            filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08))',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -8,
+              right: 24,
+              width: 16,
+              height: 16,
+              backgroundColor: '#FFFFFF',
+              transform: 'rotate(45deg)',
+              zIndex: -1
+            }
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {notificationType === "tutorial" ? (
-              <MenuBookIcon color="primary" />
-            ) : (
-              <HelpIcon color="success" />
-            )}
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600}>
-                {notificationType === "tutorial" ? "New Tutorial Available" : "Take a Quick Quiz"}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {notificationType === "tutorial"
-                  ? "Learn about feature engineering in AutoML"
-                  : "Test your knowledge on model selection"}
-              </Typography>
+          <Paper 
+            elevation={0}
+            sx={{ 
+              p: 2,
+              borderRadius: '16px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid rgba(0, 0, 0, 0.06)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Close button */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                zIndex: 2,
+              }}
+            >
+              <Button
+                size="small"
+                sx={{
+                  minWidth: 0,
+                  p: 0.5,
+                  borderRadius: '50%',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
+                }}
+                onClick={handleCloseNotification}
+                aria-label="Close notification"
+              >
+                <CloseIcon sx={{ fontSize: 16, color: 'rgba(0, 0, 0, 0.54)' }} />
+              </Button>
             </Box>
-          </Box>
-        </Paper>
-      </Fade> */}
+
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+              {notificationType === "tutorial" ? (
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    flexShrink: 0
+                  }}
+                >
+                  <MenuBookIcon sx={{ color: '#2563EB', fontSize: 20 }} />
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                    flexShrink: 0
+                  }}
+                >
+                  <QuizIcon sx={{ color: '#059669', fontSize: 20 }} />
+                </Box>
+              )}
+              <Box sx={{ flex: 1 }}>
+                <Typography 
+                  variant="subtitle2" 
+                  sx={{ 
+                    fontWeight: 600,
+                    color: notificationType === "tutorial" ? '#1E40AF' : '#047857',
+                    mb: 0.5,
+                    fontSize: '0.9rem',
+                    fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif",
+                    letterSpacing: '-0.01em'
+                  }}
+                >
+                  {notificationContent[notificationType].title}
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#64748B',
+                    display: 'block',
+                    fontSize: '0.8rem',
+                    lineHeight: 1.5,
+                    fontFamily: "'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif",
+                    mb: 1.5
+                  }}
+                >
+                  {notificationContent[notificationType].description}
+                </Typography>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disableElevation
+                  onClick={() => {
+                    const taskId = notificationType === "tutorial" 
+                      ? `tutorial-${Object.keys(getNotificationContent()).indexOf(currentPage) + 1}`
+                      : `quiz-${Object.keys(getNotificationContent()).indexOf(currentPage) + 1}`
+                    handleTaskAction(taskId)
+                    setShowNotification(false)
+                    // Set tooltipId to 100 temporarily during tutorial/quiz
+                    dispatch({ type: "TOGGLE_MODE", payload: 100 })
+                  }}
+                  sx={{
+                    fontSize: '0.75rem',
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    py: 0.5,
+                    px: 2,
+                    borderRadius: '6px',
+                    backgroundColor: notificationType === "tutorial" ? '#2563EB' : '#059669',
+                    '&:hover': {
+                      backgroundColor: notificationType === "tutorial" ? '#1E40AF' : '#047857',
+                    },
+                    fontFamily: "'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif",
+                    minHeight: 0,
+                    lineHeight: 1.5
+                  }}
+                >
+                  {notificationType === "tutorial" ? 'Start Tutorial' : 'Take Quiz'}
+                </Button>
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
+      </Fade>
 
       <Tooltip 
         title={
@@ -525,13 +825,16 @@ const EducationalFAB = ({ open, onToggle, onTaskStart, onTaskComplete, onQuizRed
                               currentTasks.map((task) => (
                                 <TaskItem
                                   key={task.id}
+                                  id={task.id}
                                   icon={task.type === 'tutorial' ? <SchoolIcon color="primary" /> : <QuizIcon color="success" />}
                                   title={task.title}
                                   description={task.description}
-                                  onComplete={() => handleTaskAction(task.id)}
+                                  onComplete={() => handleTaskCompletion(task.id)}
                                   completed={task.completed}
                                   started={task.started}
                                   onQuizRedo={onQuizRedo}
+                                  dispatch={dispatch}
+                                  onTaskStart={handleTaskAction}
                                 />
                               ))
                             ) : (
@@ -551,13 +854,16 @@ const EducationalFAB = ({ open, onToggle, onTaskStart, onTaskComplete, onQuizRed
                               otherTasks.map((task) => (
                                 <TaskItem
                                   key={task.id}
+                                  id={task.id}
                                   icon={task.type === 'tutorial' ? <SchoolIcon color="primary" /> : <QuizIcon color="success" />}
                                   title={task.title}
                                   description={task.description}
-                                  onComplete={() => handleTaskAction(task.id)}
+                                  onComplete={() => handleTaskCompletion(task.id)}
                                   completed={task.completed}
                                   started={task.started}
                                   onQuizRedo={onQuizRedo}
+                                  dispatch={dispatch}
+                                  onTaskStart={handleTaskAction}
                                 />
                               ))
                             ) : (
@@ -656,7 +962,18 @@ const EducationalFAB = ({ open, onToggle, onTaskStart, onTaskComplete, onQuizRed
   )
 }
 
-const TaskItem = ({ icon, title, description, onComplete, completed, started, onQuizRedo }) => (
+const TaskItem = ({ 
+  icon, 
+  title, 
+  description, 
+  onComplete, 
+  completed, 
+  started, 
+  onQuizRedo, 
+  dispatch,
+  onTaskStart,
+  id
+}) => (
   <Paper 
     sx={{ 
       display: 'flex', 
@@ -671,8 +988,8 @@ const TaskItem = ({ icon, title, description, onComplete, completed, started, on
     }}
     role="button"
     tabIndex={0}
-    onClick={completed ? undefined : onComplete}
-    onKeyPress={(e) => { if (e.key === 'Enter' && !completed) onComplete(); }}
+    onClick={completed ? undefined : () => onTaskStart(id)}
+    onKeyPress={(e) => { if (e.key === 'Enter' && !completed) onTaskStart(id); }}
     aria-label={`Task: ${title}`}
   >
     <Box sx={{ pl: 0.5 }}>
@@ -717,7 +1034,7 @@ const TaskItem = ({ icon, title, description, onComplete, completed, started, on
     <Box 
       sx={{ 
         display: 'flex', 
-        flexDirection: 'column', 
+        flexDirection: 'column',
         alignItems: 'flex-end',
         gap: 0.75,
         minWidth: '90px'
@@ -751,8 +1068,10 @@ const TaskItem = ({ icon, title, description, onComplete, completed, started, on
                 e.stopPropagation();
                 if (title.includes('Quiz')) {
                   onQuizRedo();
+                  dispatch({ type: "TOGGLE_MODE", payload: 100 });
                 } else {
-                  onComplete();
+                  onTaskStart(id);
+                  dispatch({ type: "TOGGLE_MODE", payload: 100 });
                 }
               }}
             >
@@ -786,7 +1105,7 @@ const TaskItem = ({ icon, title, description, onComplete, completed, started, on
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                onComplete();
+                onTaskStart(id);
               }}
             >
               {title.includes('Quiz') ? 'Continue Quiz' : 'Open Tutorial'}
@@ -795,7 +1114,10 @@ const TaskItem = ({ icon, title, description, onComplete, completed, started, on
         </>
       ) : (
         <Button 
-          onClick={(e) => { e.stopPropagation(); onComplete(); }} 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onTaskStart(id);
+          }} 
           size="small" 
           variant="contained" 
           color="primary"

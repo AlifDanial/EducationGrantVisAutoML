@@ -23,7 +23,7 @@ const CustomTooltip = withStyles({
 const TableComponent = ({ descrip, setDescrip, tooltipId, setTooltipId }) => {
   const { response, description } = useSelector((state) => state.model);
   const [page, setPage] = useState(0);
-  const columnsPerPage = 8; // Number of data columns per page
+  const rowsPerPage = 8; // Number of data rows per page
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -45,10 +45,50 @@ const TableComponent = ({ descrip, setDescrip, tooltipId, setTooltipId }) => {
     setDescrip(new_descr);
   };
 
-  const rowStyle = {
-  height: '65px', // Set the desired height
-  '&:last-child td, &:last-child th': { border: 0 },
-};
+  // Styles for the table cells
+  const headerCellStyle = {
+    fontFamily: "'SF Pro Display', sans-serif",
+    fontSize: "1rem",
+    fontWeight: "bold",
+    backgroundColor: "#F8FAFC",
+    color: "#1E293B",
+    borderBottom: "2px solid rgba(0, 0, 0, 0.08)",
+    position: "sticky",
+    left: 0,
+    zIndex: 2,
+    minWidth: "150px",
+    boxShadow: "4px 0 8px -4px rgba(0, 0, 0, 0.05)",
+  };
+
+  const dataCellStyle = {
+    fontFamily: "Open Sans",
+    fontSize: "1rem",
+    padding: "12px 16px",
+    borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+  };
+
+  // Custom scrollbar styles
+  const scrollbarStyles = {
+    // For webkit browsers (Chrome, Safari, newer versions of Edge)
+    "&::-webkit-scrollbar": {
+      width: "8px",
+      height: "8px",
+    },
+    "&::-webkit-scrollbar-track": {
+      backgroundColor: "rgba(0, 0, 0, 0.05)",
+      borderRadius: "4px",
+    },
+    "&::-webkit-scrollbar-thumb": {
+      backgroundColor: "rgba(37, 99, 235, 0.5)",
+      borderRadius: "4px",
+      "&:hover": {
+        backgroundColor: "rgba(37, 99, 235, 0.7)",
+      },
+    },
+    // For Firefox
+    scrollbarWidth: "thin",
+    scrollbarColor: "rgba(37, 99, 235, 0.5) rgba(0, 0, 0, 0.05)",
+  };
 
   return (
     <CustomTooltip
@@ -75,133 +115,137 @@ const TableComponent = ({ descrip, setDescrip, tooltipId, setTooltipId }) => {
           </Box>
         )
       }
-      placement={tooltipId === 17 ? "left" : 'bottom-start'}
+      placement={tooltipId === 17 ? "bottom-start" : 'bottom-start'}
       arrow
     >
-<TableContainer component={Paper} sx={{ backgroundColor: "#ffffff" }}>
-      <Table>
-        <TableBody>
-          {/* Header Row for 'Name' */}
-          <TableRow sx={rowStyle}>
-            <TableCell
-              align="left"
-              sx={{
-                fontFamily: "'SF Pro Display', sans-serif",
-                fontSize: "1rem",
-                fontWeight: "bold",
-              }}
-            >
-              Name
-            </TableCell>
-            {response && response.result.slice(page * columnsPerPage, page * columnsPerPage + columnsPerPage).map((row) => (
-              <TableCell
-                key={row.name}
-                align="left"
-                sx={{
-                  fontFamily: "Open Sans",
-                  fontSize: "1rem",
-                }}
-              >
-                {row.name}
-              </TableCell>
-            ))}
-          </TableRow>
-          
-          {/* Header Row for 'Empty' */}
-          <TableRow sx={rowStyle}>
-            <TableCell
-              align="left"
-              sx={{
-                fontFamily: "'SF Pro Display', sans-serif",
-                fontSize: "1rem",
-                fontWeight: "bold",
-              }}
-            >
-              {"Empty (%)"}
-            </TableCell>
-            {response && response.result.slice(page * columnsPerPage, page * columnsPerPage + columnsPerPage).map((row) => (
-              <TableCell
-                key={row.name}
-                align="left"
-                sx={{
-                  fontFamily: "Open Sans",
-                  fontSize: "1rem",
-                }}
-              >
-                {row.empty}%
-              </TableCell>
-            ))}
-          </TableRow>
-          
-          {/* Header Row for 'Fit For Use' */}
-          <TableRow sx={rowStyle}>
-            <TableCell
-              align="left"
-              sx={{
-                fontFamily: "'SF Pro Display', sans-serif",
-                fontSize: "1rem",
-                fontWeight: "bold",
-              }}
-            >
-              Fit For Use
-            </TableCell>
-            {response && response.result.slice(page * columnsPerPage, page * columnsPerPage + columnsPerPage).map((row) => (
-              <TableCell
-                key={row.name}
-                align="left"
-                sx={{
-                  fontFamily: "Open Sans",
-                  fontSize: "1rem",
-                }}
-              >
-                {row.fit_for_use ? "Yes" : "No"}
-              </TableCell>
-            ))}
-          </TableRow>
-          
-          {/* Header Row for 'Data Type' */}
-          <TableRow sx={rowStyle}>
-            <TableCell
-              align="left"
-              sx={{
-                fontFamily: "'SF Pro Display', sans-serif",
-                fontSize: "1rem",
-                fontWeight: "bold",
-              }}
-            >
-              Data Type
-            </TableCell>
-            {response && response.result.slice(page * columnsPerPage, page * columnsPerPage + columnsPerPage).map((row) => (
-              <TableCell
-              key={row.name}
-              align="left"
-              sx={{
-                fontFamily: "Open Sans",
-                fontSize: "1rem",
-              }}
-            >
-              {row.type === "int64" || row.type === "float64" ? "numeric" : "text"}
-            </TableCell>
-            
-            ))}
-          </TableRow>
-        </TableBody>
-      </Table>
-      <TablePagination
-        component="div"
-        count={response ? response.result.length : 0}
-        rowsPerPage={columnsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPageOptions={[]}
-        sx={{
-          '.MuiTablePagination-toolbar': {
-            justifyContent: 'center'
-          }
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          backgroundColor: "#ffffff",
+          maxWidth: "100%", 
+          width: "100%",
+          height: "360px", // Reduced from 400px by 10%
+          borderRadius: "12px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+          overflow: "hidden",
+          border: "1px solid rgba(0, 0, 0, 0.08)",
+          ...scrollbarStyles
         }}
-      />
-    </TableContainer>
-
+      >
+        <Box sx={{ 
+          overflowX: "auto", 
+          overflowY: "auto", 
+          height: "360px", // Adjusted to fill the entire container
+          ...scrollbarStyles
+        }}>
+          <Table sx={{ tableLayout: "auto" }}>
+            <TableHead>
+              <TableRow>
+                <TableCell 
+                  sx={{
+                    ...headerCellStyle,
+                    width: "180px",
+                    backgroundColor: "#F1F5F9",
+                    position: "relative",
+                    zIndex: 1
+                  }}
+                >
+                  Feature
+                </TableCell>
+                {response && ["Empty (%)", "Fit For Use", "Data Type"].map((header, index) => (
+                  <TableCell
+                    key={index}
+                    sx={{
+                      fontFamily: "'SF Pro Display', sans-serif",
+                      fontSize: "1rem",
+                      fontWeight: "bold",
+                      backgroundColor: "#F8FAFC",
+                      color: "#1E293B",
+                      borderBottom: "2px solid rgba(0, 0, 0, 0.08)",
+                      textAlign: "left",
+                      minWidth: "120px",
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 2,
+                      "&::after": index < 2 ? {
+                        content: '""',
+                        position: "absolute",
+                        right: 0,
+                        top: "25%",
+                        height: "50%",
+                        width: "1px",
+                        backgroundColor: "rgba(0, 0, 0, 0.08)"
+                      } : {}
+                    }}
+                  >
+                    {header}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {response && response.result.map((row, rowIndex) => (
+                <TableRow 
+                  key={row.name}
+                  sx={{
+                    backgroundColor: rowIndex % 2 === 0 ? "rgba(0, 0, 0, 0.01)" : "transparent",
+                    "&:hover": {
+                      backgroundColor: "rgba(37, 99, 235, 0.04)",
+                    },
+                    transition: "background-color 0.2s ease",
+                  }}
+                >
+                  <TableCell 
+                    sx={{
+                      ...headerCellStyle,
+                      backgroundColor: rowIndex % 2 === 0 ? "rgba(241, 245, 249, 0.8)" : "rgba(241, 245, 249, 0.5)",
+                    }}
+                  >
+                    {row.name}
+                  </TableCell>
+                  <TableCell 
+                    sx={{
+                      ...dataCellStyle,
+                      position: "relative",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        right: 0,
+                        top: "25%",
+                        height: "50%",
+                        width: "1px",
+                        backgroundColor: "rgba(0, 0, 0, 0.04)"
+                      }
+                    }}
+                  >
+                    {row.empty}%
+                  </TableCell>
+                  <TableCell 
+                    sx={{
+                      ...dataCellStyle,
+                      position: "relative",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        right: 0,
+                        top: "25%",
+                        height: "50%",
+                        width: "1px",
+                        backgroundColor: "rgba(0, 0, 0, 0.04)"
+                      }
+                    }}
+                  >
+                    {row.fit_for_use ? "Yes" : "No"}
+                  </TableCell>
+                  <TableCell sx={dataCellStyle}>
+                    {row.type === "int64" || row.type === "float64" ? "numeric" : "text"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      </TableContainer>
     </CustomTooltip>
   );
 };

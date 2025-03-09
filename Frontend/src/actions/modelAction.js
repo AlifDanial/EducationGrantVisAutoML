@@ -3,6 +3,14 @@ import Cookies from "js-cookie";
 import { dummyData } from "./dummyData";
 import { BACKEND_BASE_URL } from "../config/config.js";
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');
+
 export const reset = () => (dispatch, getState) => {
   dispatch({ type: "RESET" });
 };
@@ -148,3 +156,24 @@ export const submitModel =
       console.log(err.response.data);
     });
   };
+
+export const analyzePandasAI = (data) => (dispatch, getState) => {
+  dispatch({ type: "LOADING" });
+  const csrfToken = getCookie('csrftoken');
+  const config = {
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrfToken,
+    },
+  };
+
+  axios
+    .post(BACKEND_BASE_URL + 'api/data-analysis/', { data }, config)
+    .then((res) => {
+      dispatch({ type: "PANDAS_AI_ANALYSIS_SUCCESS", payload: res.data });
+    })
+    .catch((err) => {
+      dispatch({ type: "PANDAS_AI_ANALYSIS_FAIL", payload: err.response?.data });
+      console.error("PandasAI Analysis Error:", err);
+    });
+};

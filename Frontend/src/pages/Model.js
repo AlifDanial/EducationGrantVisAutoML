@@ -1,4 +1,4 @@
-import { Box, Grid } from "@mui/material";
+import { Box } from "@mui/material";
 import { useState } from "react";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -10,25 +10,18 @@ import "../App.css";
 
 const Model = () => {
   const [backDialogOpen, setBackDialogOpen] = useState(false);
-  const [sidebarOpen, setSideBarOpen] = useState(false);
-
-  const handleViewSidebar = () => {
-    setSideBarOpen(!sidebarOpen);
-  };
 
   return (
-    <Grid container sx={{ display: "flex", flexWrap: "nowrap !important" }}>
-      <Grid item>
-        <Navbar isOpen={sidebarOpen} toggleSidebar={handleViewSidebar}/>
-      </Grid>
-      <Grid item className="main">
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Navbar />
+      <Box className="main">
         <Body
           backDialogOpen={backDialogOpen}
           setBackDialogOpen={setBackDialogOpen}
         />
-      </Grid>
+      </Box>
       <BackDialog open={backDialogOpen} setOpen={setBackDialogOpen} />
-    </Grid>
+    </Box>
   );
 };
 

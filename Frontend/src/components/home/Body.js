@@ -21,9 +21,14 @@ import TutorialDialog from "./TutorialDialog";
 import Avatar from '@mui/material/Avatar';
 import BookmarkBorderOutlinedIcon from '@mui/icons-material/BookmarkBorderOutlined';
 import Chip from '@mui/material/Chip';
-import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
-import BalanceOutlinedIcon from '@mui/icons-material/BalanceOutlined';
+import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
+import ScoreboardIcon from '@mui/icons-material/Scoreboard';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import Menu from '@mui/material/Menu';
+import IconButton from '@mui/material/IconButton';
+import Popover from '@mui/material/Popover';
 import "../../App.css";
 import { BACKEND_BASE_URL } from "../../config/config.js";
 import axios from "axios";
@@ -42,7 +47,7 @@ import {
 import { Bar } from 'react-chartjs-2';
 import WelcomeDialog from "./Welcome.js";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import TutorialComponent from '../common/TutorialComponent';
 import ml from "../../static/images/Home Page.gif";
 import ml2 from "../../static/images/howitwork.gif";
@@ -52,10 +57,12 @@ import cl from "../../static/images/cl.gif";
 import rg from "../../static/images/rg.gif";
 import EducationalFAB from '../common/Fab';
 import QuizDialog from '../common/QuizDialog';
-import { Fade, IconButton } from '@mui/material';
+import { Fade } from '@mui/material';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import CloseIcon from '@mui/icons-material/Close';
 import QuizIcon from '@mui/icons-material/Quiz';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 // Import tutorial and quiz data
 import {
@@ -154,7 +161,7 @@ const Body = () => {
 
   const dispatch = useDispatch();
   const csrfToken = Cookies.get("csrftoken");
-
+  const navigate = useNavigate();
   const location = useLocation();
   const [showWelcome, setShowWelcome] = useState(false);
   const [showEasyModeTutorial, setShowEasyModeTutorial] = useState(false);
@@ -162,6 +169,12 @@ const Body = () => {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [currentTutorialData, setCurrentTutorialData] = useState(mlTutorialData);
   const [currentQuizQuestions, setCurrentQuizQuestions] = useState(mlQuizQuestions);
+
+  // Filter menu states
+  const [chartFilterAnchorEl, setChartFilterAnchorEl] = useState(null);
+  const [tableFilterAnchorEl, setTableFilterAnchorEl] = useState(null);
+  const [sortBy, setSortBy] = useState('');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   const config = {
     headers: {
@@ -175,6 +188,8 @@ const Body = () => {
   // Get tasks and progress from Redux instead of local state
   const tasks = useSelector((state) => state.tasks);
   const learningProgress = useSelector((state) => state.learningProgress);
+  const [algorithmStats, setAlgorithmStats] = useState({});
+  const [trendData, setTrendData] = useState({});
 
   const [showNotification, setShowNotification] = useState({
     tutorial: true,
@@ -301,7 +316,7 @@ const Body = () => {
   const onOpenTutorial = (title, url) => {
     setVideoTitle(title);
     setVideoUrl(url);
-    setVideoDialogOpen(true);
+    // setVideoDialogOpen(true);
   };
 
   const handleChange1 = (e) => {
@@ -386,10 +401,14 @@ const Body = () => {
       if (rows[i].algorithm_name === "") {
         continue;
       } else {
-        nameset.push(rows[i].algorithm_name);
+        nameset.push(formatAlgorithmName(rows[i].algorithm_name));
       }
     }
     return nameset[0];
+  }
+
+  const formatAlgorithmName = (name) => {
+    return name.replace(/([A-Z])/g, ' $1').trim();
   }
 
   const calcClaspercent = (data) => {
@@ -558,6 +577,90 @@ const Body = () => {
     }));
   };
 
+  const handleChartFilterClick = (event) => {
+    setChartFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleChartFilterClose = () => {
+    setChartFilterAnchorEl(null);
+  };
+
+  const handleTableFilterClick = (event) => {
+    setTableFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleTableFilterClose = () => {
+    setTableFilterAnchorEl(null);
+  };
+
+  const handleSortChange = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    handleTableFilterClose();
+  };
+
+  useEffect(() => {
+    // Calculate algorithm statistics from rows data
+    if (rows && rows.length > 0) {
+      const stats = {};
+      const trends = {};
+      
+      rows.forEach(row => {
+        if (!row.algorithm_name) return;
+        
+        const algoName = row.algorithm_name;
+        const score = parseFloat(row.overall_score || 0);
+        const modelType = row.model_type === 'RG' ? 'regression' : 'classification';
+        
+        if (!stats[algoName]) {
+          stats[algoName] = {
+            name: algoName,
+            totalScore: score,
+            modelCount: 1,
+            scores: [score],
+            type: modelType
+          };
+        } else {
+          stats[algoName].totalScore += score;
+          stats[algoName].modelCount += 1;
+          stats[algoName].scores.push(score);
+        }
+      });
+
+      // Calculate average scores and trends
+      Object.keys(stats).forEach(algoName => {
+        const algo = stats[algoName];
+        algo.avgScore = (algo.totalScore / algo.modelCount).toFixed(1);
+        
+        // Calculate trend (comparing recent scores to overall average)
+        const recentScores = algo.scores.slice(-Math.min(3, algo.scores.length));
+        const recentAvg = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
+        const trend = ((recentAvg - algo.avgScore) / algo.avgScore * 100).toFixed(1);
+        trends[algoName] = parseFloat(trend);
+      });
+
+      setAlgorithmStats(stats);
+      setTrendData(trends);
+    }
+  }, [rows]);
+
+  const getTopAlgorithms = () => {
+    if (!algorithmStats) return [];
+
+    return Object.values(algorithmStats)
+      .sort((a, b) => parseFloat(b.avgScore) - parseFloat(a.avgScore))
+      .map(algo => ({
+        name: algo.name,
+        modelCount: algo.modelCount,
+        score: algo.avgScore,
+        trend: trendData[algo.name] || 0
+      }));
+  };
+
   return (
     <Grid container className="main"
       sx={{
@@ -570,7 +673,7 @@ const Body = () => {
       }}
     >
       {/* Notifications Container */}
-      <Box 
+      {/* <Box 
         sx={{ 
           position: 'fixed', 
           bottom: 90, 
@@ -580,7 +683,7 @@ const Body = () => {
         }}
       >
         {/* Tutorial Notification */}
-        <Fade
+        {/* <Fade
           in={showNotification.tutorial}
           timeout={300}
         >
@@ -676,7 +779,7 @@ const Body = () => {
         </Fade>
 
         {/* Quiz Notification */}
-        <Fade
+        {/* <Fade
           in={showNotification.quiz && !showNotification.tutorial}
           timeout={300}
         >
@@ -769,18 +872,18 @@ const Body = () => {
               </Button>
             </Box>
           </Paper>
-        </Fade>
-      </Box>
-      <Grid item xs={12} sx={{ width: "100%", height: "35px", padding: "0px 10px 0px 20px", fontWeight: "900",
-            fontFamily: "'SF Pro Display', sans-serif", }}>
-        <Typography
+        </Fade>  */}
+      {/* </Box> */}
+      {/* <Grid item xs={12} sx={{ width: "100%", height: "35px", padding: "0px 10px 0px 20px", fontWeight: "900",
+            fontFamily: "'SF Pro Display', sans-serif", }}> */}
+        {/* <Typography
           sx={{
             fontSize: "1.4rem",
             fontWeight: "bolder",            
           }}
         >
           Home
-        </Typography>
+        </Typography> */}
         {/* <Typography
           sx={{    
             fontSize: ".9rem",
@@ -792,18 +895,18 @@ const Body = () => {
         >
           Dashboard
         </Typography> */}
-      </Grid>
+      {/* </Grid> */}
       <Grid item xs={12} sx={{ width: "100%", height: "220px", marginTop: "0px" }}>
         <Grid container sx={{ width: "100%", height: "100%" }}>
           <Grid item xs={6} md={6} lg={6.17} xl={6.34} sx={{ width: "100%", height: "100%", padding: "10px" }}>
             <Paper sx={{ width: "100%", height: "100%", backgroundColor: "#344455", borderRadius: "20px", padding: "20px" }}>
               <Grid container sx={{ width: "100%", height: "100%" }}>
                 <Grid item xs={12} sx={{ width: "100%", height: "25%" }}>
-                  <Grid container>
-                    <Grid item xs={5}>
+                  <Grid container alignItems="center" justifyContent="space-between">
+                    <Grid item xs={8}>
                       <Typography
                         sx={{
-                          fontSize: "1em",
+                          fontSize: { xs: "0.9em", sm: "1em", md: "1.1em" },
                           fontWeight: "bold",
                           fontFamily: "'SF Pro Display', sans-serif",
                           color: "white"
@@ -814,7 +917,7 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: "0.8em",
+                          fontSize: { xs: "0.7em", sm: "0.75em", md: "0.8em" },
                           fontWeight: "500",
                           color: "white"
                         }}
@@ -822,45 +925,86 @@ const Body = () => {
                         Regression vs Classification
                       </Typography>
                     </Grid>
-                    <Grid item xs={0.1}></Grid>
-                    <Grid item xs={2.9} sx={{ marginTop: "-5px" }}>
-                      <FormControl sx={{ m: 1, width: "100%" }} size="small">
-                        <InputLabel sx={{ marginTop: "1px", fontSize: "12px" }}>Type</InputLabel>
-                        <Select
-                          sx={{ backgroundColor: "white", height: "35px", borderRadius: "5px", fontFamily: "'SF Pro Display', sans-serif", }}
-                          labelId="demo-select-small-label"
-                          id="demo-select-small"
-                          value={class1}
-                          label="class1"
-                          onChange={handleChange1}
-                        >
-                          <MenuItem value="" sx={{fontFamily: "'SF Pro Display', sans-serif",}}>
-                            <em>All</em>
-                          </MenuItem>
-                          <MenuItem value="Regression" sx={{fontFamily: "'SF Pro Display', sans-serif",}}>Regression</MenuItem>
-                          <MenuItem value="Classification" sx={{fontFamily: "'SF Pro Display', sans-serif",}}>Classification</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={4} sx={{ padding: "0px 5px 0px 10px", marginTop: "-5px" }}>
-                      <FormControl sx={{ m: 1, width: "100%" }} size="small">
-                        <InputLabel sx={{ marginTop: "1px", fontSize: "12px" }}>Algorithm</InputLabel>
-                        <Select
-                          sx={{ backgroundColor: "white", height: "35px", borderRadius: "5px", fontFamily: "'SF Pro Display', sans-serif", }}
-                          labelId="demo-select-small-label"
-                          id="demo-select-small"
-                          value={class2}
-                          label="class2"
-                          onChange={handleChange2}
-                        >
-                          <MenuItem value="" sx={{fontFamily: "'SF Pro Display', sans-serif",}}>
-                            <em>All</em>
-                          </MenuItem>
-                          {
-                            class1 ? category[class1].map(one => <MenuItem sx={{fontFamily: "'SF Pro Display', sans-serif",}} key={one.name} value={one.value}>{one.name}</MenuItem>) : ''
+                    <Grid item xs={4} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <IconButton
+                        onClick={handleChartFilterClick}
+                        sx={{ 
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
                           }
-                        </Select>
-                      </FormControl>
+                        }}
+                      >
+                        <FilterListIcon />
+                      </IconButton>
+                      <Popover
+                        open={Boolean(chartFilterAnchorEl)}
+                        anchorEl={chartFilterAnchorEl}
+                        onClose={handleChartFilterClose}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'right',
+                        }}
+                        PaperProps={{
+                          sx: {
+                            mt: 1,
+                            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
+                            borderRadius: '12px',
+                            minWidth: '200px'
+                          }
+                        }}
+                      >
+                        <Box sx={{ p: 2 }}>
+                          <Typography
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              fontSize: "0.9rem",
+                              fontWeight: "600",
+                              mb: 2
+                            }}
+                          >
+                            Filter Options
+                          </Typography>
+                          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                            <InputLabel sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>Type</InputLabel>
+                            <Select
+                              value={class1}
+                              onChange={handleChange1}
+                              label="Type"
+                              sx={{ fontFamily: "'SF Pro Display', sans-serif" }}
+                            >
+                              <MenuItem value="" sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>
+                                <em>All</em>
+                              </MenuItem>
+                              <MenuItem value="Regression" sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>Regression</MenuItem>
+                              <MenuItem value="Classification" sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>Classification</MenuItem>
+                            </Select>
+                          </FormControl>
+                          <FormControl fullWidth size="small">
+                            <InputLabel sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>Algorithm</InputLabel>
+                            <Select
+                              value={class2}
+                              onChange={handleChange2}
+                              label="Algorithm"
+                              disabled={!class1}
+                              sx={{ fontFamily: "'SF Pro Display', sans-serif" }}
+                            >
+                              <MenuItem value="" sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>
+                                <em>All</em>
+                              </MenuItem>
+                              {class1 && category[class1].map(one => (
+                                <MenuItem key={one.value} value={one.value} sx={{ fontFamily: "'SF Pro Display', sans-serif" }}>
+                                  {one.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Box>
+                      </Popover>
                     </Grid>
                   </Grid>
                 </Grid>
@@ -870,37 +1014,13 @@ const Body = () => {
               </Grid>
             </Paper>
           </Grid>
-          <Grid item xs={3} md={3} lg={3.08} xl={3.16} sx={{ width: "100%", height: "100%", backgroundColor: "#F5F5F5", padding: "10px" }}>
-            <Grid container sx={{ width: "100%", height: "100%" }}>
-              <Grid item xs={12} sx={{ width: "100%", height: "25%" }}>
-                <Typography
-                  sx={{
-                    fontSize: "1em",
-                    fontWeight: "bolder",
-                    fontFamily: "'SF Pro Display', sans-serif",
-                  }}
-                >
-                  Getting Started
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: "'SF Pro Display', sans-serif",
-                    fontSize: "0.8em",
-                    fontWeight: "500",
-                    color: "black",
-                  }}
-                >
-                  Tutorials and Guides
-                </Typography>
-              </Grid>
-              <CustomTooltip
+          <CustomTooltip
                 open={tooltipId === 3 ? true : false}
                 onOpen={handleOpen}
                 onClose={handleClose}
                 title={
                   <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                    <Typography>New to ML? These guides provide step-by-step
-                      introductions to the world of AutoML.</Typography>
+                    <Typography>Scroll through the historical performance of the top performing algorithms.</Typography>
                     <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(2)}>PREVIOUS</Button>
                       <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(4)}>NEXT</Button>
@@ -910,158 +1030,140 @@ const Body = () => {
                 placement="bottom-start"
                 arrow
               >
-                <Grid sx={{ width: "100%" }}>
-                  <Grid item xs={12} sx={{ width: "100%", height: "33%" }}>
-                    <Grid item width="100%" display="flex" justifyContent="space-between">
-                      <Box display="flex" width="70%">
-                        <Grid item>
-                          <Avatar sx={{ bgcolor: "#1A97F5" }}><BookmarkBorderOutlinedIcon /></Avatar>
-                        </Grid>
-                        <Grid item sx={{ padding: "5px 0px 0px 8px" }} zeroMinWidth>
-                          <Typography
-                            sx={{
-                              fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: "0.8rem",
-                              fontWeight: "500",
-                              color: "black",
-                            }}
-                            noWrap
-                          >
-                            {"What is Machine Learning (ML)?"}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: "0.7rem",
-                              fontWeight: "500",
-                              color: "black",
-                            }}
-                            noWrap
-                          >
-                            Introduction to ML Basics
-                          </Typography>
-                        </Grid>
-                      </Box>
-                      <Grid item >
-                        <Button
-                          variant="contained"
-                          color="inherit"
-                          margin="dense"
-                          size="small"
-                          sx={{ borderRadius: "15px", fontSize: "0.7em", backgroundColor: "white", marginTop: "3px" ,fontFamily: "'SF Pro Display', sans-serif", }}
-                          component="a"
-                          href="https://app.gitbook.com/o/zdPfAuEYtpcuOflHlZr8/s/6YN5g2XG7tUO55uaWKUE/fundamentals/what-is-machine-learning" // Replace with your desired URL
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open
-                        </Button>
-                      </Grid>
-                    </Grid>
-                    <Divider sx={{ marginTop: "4px", backgroundColor: "#D3D3D3" }} />
-                  </Grid>
-                  <Grid item xs={12} sx={{ width: "100%", height: "33%" }}>
-                    <Grid item width="100%" display="flex" justifyContent="space-between">
-                      <Box display="flex" width="70%">
-                        <Grid item >
-                          <Avatar sx={{ bgcolor: "#1A97F5" }}><BookmarkBorderOutlinedIcon /></Avatar>
-                        </Grid>
-                        <Grid item sx={{ padding: "5px 0px 0px 8px" }} zeroMinWidth>
-                          <Typography
-                            sx={{
-                              fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: "0.8rem",
-                              fontWeight: "500",
-                              color: "black",
-                            }}
-                            noWrap
-                          >
-                            {"What is AutoML?"}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: "0.7rem",
-                              fontWeight: "500",
-                              color: "black",
-                            }}
-                            noWrap
-                          >
-                            {"Introduction to AutoML"}
-                          </Typography>
-                        </Grid>
-                      </Box>
-                      <Grid item >
-                        <Button
-                          variant="contained"
-                          color="inherit"
-                          margin="dense"
-                          size="small"
-                          sx={{ borderRadius: "15px", fontSize: "0.7em", backgroundColor: "white", marginTop: "3px", fontFamily: "'SF Pro Display', sans-serif", }}                          
-                          component="a"
-                          href="https://app.gitbook.com/o/zdPfAuEYtpcuOflHlZr8/s/6YN5g2XG7tUO55uaWKUE/fundamentals/what-is-automl" // Replace with your desired URL
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open
-                        </Button>
-                      </Grid>
-                    </Grid>
-                    <Divider sx={{ marginTop: "4px", backgroundColor: "#D3D3D3" }} />
-                  </Grid>
-                  <Grid item xs={12} sx={{ width: "100%", height: "33%" }}>
-                    <Grid item width="100%" display="flex" justifyContent="space-between">
-                      <Box display="flex" width="70%">
-                        <Grid item >
-                          <Avatar sx={{ bgcolor: "#1A97F5" }}><BookmarkBorderOutlinedIcon /></Avatar>
-                        </Grid>
-                        <Grid item sx={{ padding: "5px 0px 0px 8px" }} zeroMinWidth>
-                          <Typography
-                            sx={{
-                              fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: "0.8rem",
-                              fontWeight: "500",
-                              color: "black",
-                            }}
-                            noWrap
-                          >
-                            Regression or Classification?
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontFamily: "'SF Pro Display', sans-serif",
-                              fontSize: "0.7rem",
-                              fontWeight: "500",
-                              color: "black",
-                            }}
-                            noWrap
-                          >
-                            Identifying the Learning Task
-                          </Typography>
-                        </Grid>
-                      </Box>
-                      <Grid item >
-                        <Button
-                          variant="contained"
-                          color="inherit"
-                          margin="dense"
-                          size="small"
-                          sx={{ borderRadius: "15px", fontSize: "0.7em", backgroundColor: "white", marginTop: "3px" ,fontFamily: "'SF Pro Display', sans-serif", }}
-                          component="a"
-                          href="https://app.gitbook.com/o/zdPfAuEYtpcuOflHlZr8/s/6YN5g2XG7tUO55uaWKUE/fundamentals/regression-or-classification" // Replace with your desired URL
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open
-                        </Button>
-                      </Grid>
-                    </Grid>
-                    <Divider sx={{ marginTop: "4px", backgroundColor: "#D3D3D3" }} />
-                  </Grid>
+          <Grid item xs={3} md={3} lg={3.08} xl={3.16} sx={{ width: "100%", height: "100%", backgroundColor: "#F5F5F5", padding: "10px" }}>
+            <Paper sx={{ width: "100%", height: "100%", backgroundColor: "#344455", borderRadius: "20px", padding: "20px" }}>
+              <Grid container sx={{ width: "100%", height: "100%" }}>
+                <Grid item xs={12} sx={{ width: "100%", height: "25%" }}>
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      fontWeight: "bold",
+                      fontFamily: "'SF Pro Display', sans-serif",
+                      color: "white"
+                    }}
+                  >
+                    Algorithm Performance
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: "'SF Pro Display', sans-serif",
+                      fontSize: "0.8rem",
+                      fontWeight: "500",
+                      color: "white"
+                    }}
+                  >
+                    Top Performing Algorithms
+                  </Typography>
                 </Grid>
-              </CustomTooltip>
-            </Grid>
+                <Grid item xs={12} sx={{ 
+                  width: "100%", 
+                  height: "75%", 
+                  overflow: "auto",
+                  '&::-webkit-scrollbar': {
+                    display: 'none'
+                  },
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  pt: 1.5
+                }}>
+                  {getTopAlgorithms().map((algo, index) => (
+                    <Box
+                      key={algo.name}
+                      sx={{
+                        p: 1.2,
+                        mb: 1,
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.2,
+                        height: '52px'
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : 'rgba(255, 255, 255, 0.2)',
+                          color: 'white',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          fontFamily: "'SF Pro Display', sans-serif"
+                        }}
+                      >
+                        {index + 1}
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          sx={{
+                            fontSize: { lg: '0.8rem', md: '0.7rem' },
+                            fontWeight: '500',
+                            color: 'white',
+                            fontFamily: "'SF Pro Display', sans-serif",
+                            mb: 0.2
+                          }}
+                        >
+                          {formatAlgorithmName(algo.name)}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography
+                            sx={{
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.7)',
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              display: { lg: 'block', md: 'none' }
+                            }}
+                          >
+                            {algo.modelCount} models
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: { lg: 'flex', md: 'none' },
+                              alignItems: 'center',
+                              gap: 0.5,
+                              color: algo.trend > 0 ? '#4CAF50' : '#f44336'
+                            }}
+                          >
+                            {algo.trend > 0 ? (
+                              <TrendingUpIcon sx={{ fontSize: '0.9rem' }} />
+                            ) : (
+                              <TrendingDownIcon sx={{ fontSize: '0.9rem' }} />
+                            )}
+                            <Typography
+                              sx={{
+                                fontSize: '0.7rem',
+                                fontFamily: "'SF Pro Display', sans-serif",
+                                color: 'inherit'
+                              }}
+                            >
+                              {Math.abs(algo.trend)}%
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography
+                          sx={{
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: 'white',
+                            fontFamily: "'SF Pro Display', sans-serif"
+                          }}
+                        >
+                          {algo.score}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Grid>
+              </Grid>
+            </Paper>
           </Grid>
+          </CustomTooltip>
           <Grid item xs={3} md={3} lg={2.75} xl={2.5} sx={{ width: "100%", height: "100%", padding: "10px" }}>
             <Paper sx={{ width: "100%", height: "100%", backgroundColor: "#344455", borderRadius: "20px", padding: "20px" }}>
               <Grid container sx={{ width: "100%", height: "100%" }}>
@@ -1087,78 +1189,150 @@ const Body = () => {
                     Classification vs Regression
                   </Typography>
                 </Grid>
-                <Grid item width="100%" height="90%" display="flex" alignItems="center" justifyContent="space-between" paddingBottom="10px" sx={{}}>
-                  <Grid item xs={5} width="100%" height="100%" display="flex" justifyContent="center" alignItems="center">
-                    {/* <Paper sx={{
-                    position:'absolute',
-                    top:'20px',
-                    left: "10px",
-                    paddingTop:'10px',
-                    borderRadius:'50%', backgroundColor:'white', width:'80%',height:'75%'}}>
-                  </Paper> */}
-                    <Doughnut data={cdata} style={{ maxWidth: "100%", maxHeight: "100%" }} />
+                <Grid item width="100%" height="90%" display="flex" alignItems="center" justifyContent="space-between" paddingBottom="10px">
+                  <Grid item xs={5} width="100%" height="100%" display="flex" justifyContent="center" alignItems="center" position="relative">
+                    <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <Doughnut data={cdata} options={{
+                        plugins: {
+                          legend: {
+                            display: false
+                          },
+                          tooltip: {
+                            backgroundColor: 'white',
+                            titleColor: '#344455',
+                            bodyColor: '#344455',
+                            bodyFont: {
+                              family: "'SF Pro Display', sans-serif",
+                              size: 14
+                            },
+                            padding: 12,
+                            boxPadding: 8,
+                            borderColor: 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            usePointStyle: true,
+                            callbacks: {
+                              label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${value}%`;
+                              }
+                            }
+                          }
+                        },
+                        cutout: '75%',
+                        rotation: 135
+                      }} />
+                      <Box sx={{
+                        position: 'absolute',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Typography sx={{
+                          color: 'white',
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          fontFamily: "'SF Pro Display', sans-serif",
+                          display: { lg: 'block', md: 'none' }
+                        }}>
+                          Total
+                        </Typography>
+                        <Typography sx={{
+                          color: 'white',
+                          fontSize: '1.5rem',
+                          fontWeight: '700',
+                          fontFamily: "'SF Pro Display', sans-serif",
+                        }}>
+                          {rows.length}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Grid>
                   <Grid item xs={7} display="flex" flexDirection="column" justifyContent="center" alignItems="center">
                     <Box
                       width="fit-content"
                       display="flex"
                       flexDirection="column"
-                      gap="1em"
+                      gap={{ xl: "1.5em", lg: "1.2em", md: ".5em" }}
                     >
                       <Box 
                         width="fit-content"
                         display="flex"
                         flexDirection="row"
-                        sx={{alignItems: 'center',}}
-                        >
-                      <Box                        
+                        sx={{alignItems: 'center'}}
+                      >
+                        <Box                        
                           sx={{
-                            width: '7px', // Diameter of the circle
-                            height: '7px',
-                            backgroundColor: "#EAA349", // Same color as the text for this row
-                            borderRadius: '50%', // Makes it a circle
-                            marginRight: { xl: "10px", lg: "9x", md: "8px" }, // Spacing between circle and text
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: "#EAA349",
+                            borderRadius: '50%',
+                            marginRight: { xl: "12px", lg: "10px", md: "8px" },
                           }}
                         />
-                      <Typography
-                        sx={{
-                          fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: { xl: "14px", lg: "12px", md: "10px" },
-                          fontWeight: "500",
-                          color: "white",
-                          textAlign: "right",
-                          marginRight: { xl: "10px", lg: "9x", md: "8px" },
-                        }}
-                      >
-                        Classification: {clasPercent}%
-                      </Typography>                      
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              fontSize: { xl: "1rem", lg: "0.95rem", md: "0.75rem" },
+                              fontWeight: "600",
+                              color: "white",
+                            }}
+                          >
+                            Classification
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              fontSize: { xl: "0.9rem", lg: "0.85rem", md: "0.7rem" },
+                              fontWeight: "500",
+                              color: "rgba(255,255,255,0.7)",
+                            }}
+                          >
+                            {clasPercent}% of models
+                          </Typography>
+                        </Box>
                       </Box>
                       <Box 
                         width="fit-content"
                         display="flex"
                         flexDirection="row"
-                        sx={{alignItems: 'center',}}
-                        >
+                        sx={{alignItems: 'center'}}
+                      >
                         <Box                        
-                            sx={{
-                              width: '7px', // Diameter of the circle
-                              height: '7px',
-                              backgroundColor: "#1A97F5", // Same color as the text for this row
-                              borderRadius: '50%', // Makes it a circle
-                              marginRight: { xl: "10px", lg: "9x", md: "8px" }, // Spacing between circle and text
-                            }}
-                          />
-                        <Typography
                           sx={{
-                            fontFamily: "'SF Pro Display', sans-serif",
-                            fontSize: { xl: "14px", lg: "12px", md: "10px" },
-                            fontWeight: "500",
-                            color: "white",
-                            textAlign: "right"
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: "#1A97F5",
+                            borderRadius: '50%',
+                            marginRight: { xl: "12px", lg: "10px", md: "8px" },
                           }}
-                        >
-                          Regression: {regPercent}%
-                        </Typography>
+                        />
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              fontSize: { xl: "1rem", lg: "0.95rem", md: "0.75rem" },
+                              fontWeight: "600",
+                              color: "white",
+                            }}
+                          >
+                            Regression
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              fontSize: { xl: "0.9rem", lg: "0.85rem", md: "0.7rem" },
+                              fontWeight: "500",
+                              color: "rgba(255,255,255,0.7)",
+                            }}
+                          >
+                            {regPercent}% of models
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
                   </Grid>
@@ -1189,8 +1363,16 @@ const Body = () => {
                             Models Created
                           </Typography>
                         </Grid>
-                        <Grid item xs={2}>
-                          <Avatar alt="1" src="/img/1.png" />
+                        <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Avatar 
+                            sx={{ 
+                              bgcolor: 'rgba(255, 255, 255, 0.2)',
+                              width: 35,
+                              height: 35
+                            }}
+                          >
+                            <ModelTrainingIcon sx={{ color: 'white', fontSize: '1.3rem' }} />
+                          </Avatar>
                         </Grid>
                       </Grid>
                     </Grid>
@@ -1198,7 +1380,7 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: "2.5em",
+                          fontSize: { lg: "2.5em", md: "1.9em" },
                           fontWeight: "700",
                           color: "white",
                         }}
@@ -1209,7 +1391,7 @@ const Body = () => {
                     <Grid item xs={12} sx={{ width: "100%", height: "20%" }}>
                       <Typography
                         sx={{
-                          fontFamily: "Open Sans",
+                          fontFamily: "'SF Pro Display', sans-serif",
                           fontSize: "0.7rem",
                           fontWeight: "500",
                           color: "white",
@@ -1237,8 +1419,16 @@ const Body = () => {
                             Model Average Score
                           </Typography>
                         </Grid>
-                        <Grid item xs={2}>
-                          <Avatar alt="2" src="/img/2.png" />
+                        <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Avatar 
+                            sx={{ 
+                              bgcolor: '#E3F2FD',
+                              width: 35,
+                              height: 35
+                            }}
+                          >
+                            <ScoreboardIcon sx={{ color: '#1A97F5', fontSize: '1.3rem' }} />
+                          </Avatar>
                         </Grid>
                       </Grid>
                     </Grid>
@@ -1246,7 +1436,7 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: "2.5em",
+                          fontSize: { lg: "2.5em", md: "1.9em" },
                           fontWeight: "700"
                         }}
                       >
@@ -1283,8 +1473,16 @@ const Body = () => {
                             Recently Used Algorithm
                           </Typography>
                         </Grid>
-                        <Grid item xs={2}>
-                          <Avatar alt="3" src="/img/3.png" />
+                        <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Avatar 
+                            sx={{ 
+                              bgcolor: '#FFF4DE',
+                              width: 35,
+                              height: 35
+                            }}
+                          >
+                            <PsychologyIcon sx={{ color: '#EAA349', fontSize: '1.3rem' }} />
+                          </Avatar>
                         </Grid>
                       </Grid>
                     </Grid>
@@ -1292,8 +1490,9 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: "1.5em",
-                          fontWeight: "700"
+                          fontSize: { lg: "1.5em", md: "1.0em" },
+                          lineHeight: { lg: "1.5em", md: "1.1em" },
+                          fontWeight: "700",
                         }}
                       >
                         {getRecentalgorithm()}
@@ -1323,7 +1522,7 @@ const Body = () => {
                     <Grid item xs={3} sx={{ textAlign: "left" }}>
                       <Typography
                         sx={{
-                          fontSize: "1.4em",                          
+                          fontSize: { xs: "1.2em", sm: "1.3em", md: "1.2em" },
                           marginTop: "5px",
                           fontFamily: "'SF Pro Display', sans-serif",
                           fontWeight: "bolder",
@@ -1333,9 +1532,110 @@ const Body = () => {
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
-
                     </Grid>
-                    <Grid item xs={3} sx={{ textAlign: "right" }}>
+                    <Grid item xs={3} sx={{ 
+                      textAlign: "right",
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1
+                    }}>
+                      <IconButton
+                        onClick={handleTableFilterClick}
+                        sx={{ 
+                          color: '#344455',
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                          }
+                        }}
+                      >
+                        <FilterListIcon />
+                      </IconButton>
+                      <Popover
+                        open={Boolean(tableFilterAnchorEl)}
+                        anchorEl={tableFilterAnchorEl}
+                        onClose={handleTableFilterClose}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'right',
+                        }}
+                        PaperProps={{
+                          sx: {
+                            mt: 1,
+                            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
+                            borderRadius: '12px',
+                            minWidth: '200px'
+                          }
+                        }}
+                      >
+                        <Box sx={{ p: 2 }}>
+                          <Typography
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              fontSize: "0.9rem",
+                              fontWeight: "600",
+                              mb: 2
+                            }}
+                          >
+                            Sort By
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {[
+                              { label: 'Model Name', value: 'model_name' },
+                              { label: 'Model Type', value: 'model_type' },
+                              { label: 'Algorithm', value: 'algorithm_name' },
+                              { label: 'Score', value: 'overall_score' }
+                            ].map((option) => (
+                              <Button
+                                key={option.value}
+                                onClick={() => handleSortChange(option.value)}
+                                sx={{
+                                  justifyContent: 'flex-start',
+                                  color: sortBy === option.value ? 'primary.main' : 'text.primary',
+                                  fontFamily: "'SF Pro Display', sans-serif",
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                                  }
+                                }}
+                                startIcon={
+                                  sortBy === option.value && (
+                                    <Typography component="span" sx={{ fontSize: '1.2rem' }}>
+                                      {sortOrder === 'asc' ? '↑' : '↓'}
+                                    </Typography>
+                                  )
+                                }
+                              >
+                                {option.label}
+                              </Button>
+                            ))}
+                          </Box>
+                          <Divider sx={{ my: 2 }} />
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => {
+                              setSortBy('');
+                              setSortOrder('asc');
+                              handleTableFilterClose();
+                            }}
+                            sx={{
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              textTransform: 'none',
+                              borderColor: 'rgba(0, 0, 0, 0.12)',
+                              color: 'text.secondary',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                borderColor: 'rgba(0, 0, 0, 0.24)'
+                              }
+                            }}
+                          >
+                            Reset Sorting
+                          </Button>
+                        </Box>
+                      </Popover>
                       <CustomTooltip
                         open={tooltipId === 5 ? true : false}
                         onOpen={handleOpen}
@@ -1358,7 +1658,11 @@ const Body = () => {
                           color="primary"
                           margin="dense"
                           size="medium"
-                          sx={{ borderRadius: "12px", fontFamily: "'SF Pro Display', sans-serif", }}
+                          sx={{ 
+                            borderRadius: "12px", 
+                            fontFamily: "'SF Pro Display', sans-serif",
+                            fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.8rem" }
+                          }}
                           onClick={() => setNewModelOpen(true)}
                         >
                           New Model
@@ -1385,7 +1689,15 @@ const Body = () => {
                   arrow
                 >
                   <Grid item xs={12} sx={{ marginTop: "10px", padding: "5px" }}>
-                    <TableComponent rows={rows} setPosts={setPosts} />
+                    <TableComponent 
+                      rows={rows} 
+                      setPosts={setPosts} 
+                      sortBy={sortBy}
+                      setSortBy={setSortBy}
+                      sortOrder={sortOrder}
+                      setSortOrder={setSortOrder}
+                      rowsPerPage={{ lg: 5, md: 4 }}
+                    />
                   </Grid>
                 </CustomTooltip>
               </Grid>
@@ -1426,18 +1738,18 @@ const Body = () => {
                       Guides and Tutorials
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sx={{ width: "100%", height: "30%" }}>
+                  <Grid item xs={12} sx={{ width: "100%", height: { lg: "30%", md: "15%" } }}>
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
-                        fontSize: "1.1em",
+                        fontSize: { lg: "1.1em", md: "0.9em" },
                         fontWeight: "700"
                       }}
                     >
                       Video Tutorial: VisAutoML
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sx={{ width: "100%", height: "10%" }}>
+                  <Grid item xs={12} sx={{ width: "100%", height: "10%" }} >
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
@@ -1482,7 +1794,7 @@ const Body = () => {
             <Grid item xs={12} sx={{ width: "100%", height: "33.4%", padding: "10px" }}>
               <Paper sx={{ width: "100%", height: "100%", padding: "20px", borderRadius: "20px" }}>
                 <Grid container sx={{ width: "100%", height: "100%" }}>
-                  <Grid item xs={12} sx={{ width: "100%", height: "15%" }}>
+                <Grid item xs={12} sx={{ width: "100%", height: { lg: "30%", md: "15%" } }}>
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
@@ -1497,7 +1809,7 @@ const Body = () => {
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
-                        fontSize: "1.1em",
+                        fontSize: { lg: "1.1em", md: "0.9em" },
                         fontWeight: "700"
                       }}
                     >
@@ -1548,7 +1860,7 @@ const Body = () => {
             <Grid item xs={12} sx={{ width: "100%", height: "33.3%", padding: "10px" }}>
               <Paper sx={{ width: "100%", height: "100%", padding: "20px", borderRadius: "20px" }}>
                 <Grid container sx={{ width: "100%", height: "100%" }}>
-                  <Grid item xs={12} sx={{ width: "100%", height: "15%" }}>
+                <Grid item xs={12} sx={{ width: "100%", height: { lg: "30%", md: "15%" } }}>
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
@@ -1563,7 +1875,7 @@ const Body = () => {
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
-                        fontSize: "1.1em",
+                        fontSize: { lg: "1.1em", md: "0.9em" },
                         fontWeight: "700"
                       }}
                     >
@@ -1633,16 +1945,16 @@ const Body = () => {
         open={classifyOpen}
         setOpen={setclassOpen}
       />
-      <TutorialDialog
+      {/* <TutorialDialog
         open={tutorialOpen}
         setOpen={setTutorial}
-      />
-      <VideoDialog
+      /> */}
+      {/* <VideoDialog
         open={videoDialogOpen}
         setOpen={setVideoDialogOpen}
         title={videoTitle}
         url={videoUrl}
-      />
+      /> */}
       <DeleteDialog open={deleteDialogOpen} setOpen={setDeleteDialogOpen} />
       <WelcomeDialog open={tooltipId === -3 && showWelcome} setOpen={setTooltipId}/>
       <TutorialComponent

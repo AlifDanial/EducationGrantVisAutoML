@@ -8,6 +8,7 @@ import {
   Slider,
   Table,
   TableBody,
+  Paper,
   TableCell,
   TableHead,
   TableRow,
@@ -19,7 +20,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Box } from "@mui/system";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import Lists from "./Lists";
 import { makeStyles } from "@mui/styles";
@@ -658,16 +659,97 @@ const rows = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 //   }
 // ];
 
+// Helper functions for data quality metrics
+const calculateMissingPercentage = (response) => {
+  if (!response || !response.histogram || !response.columns) return 0;
+
+  let totalCells = 0;
+  let missingCells = 0;
+
+  response.columns.forEach(column => {
+    const columnData = response.histogram[column];
+    if (!columnData) return;
+
+    totalCells += columnData.length;
+    missingCells += columnData.filter(value => 
+      value === null || 
+      value === undefined || 
+      value === '' || 
+      (typeof value === 'string' && value.trim() === '')
+    ).length;
+  });
+
+  return totalCells === 0 ? 0 : Math.round((missingCells / totalCells) * 100);
+};
+
+const calculateDataQualityScore = (response) => {
+  if (!response || !response.histogram || !response.columns) return 0;
+  
+  const missingPercentage = calculateMissingPercentage(response);
+  const completenessScore = 100 - missingPercentage;
+  
+  // For now, we'll use a simple scoring system based on completeness
+  // In a real application, you might want to consider other factors like:
+  // - Data type consistency
+  // - Value range validity
+  // - Outlier presence
+  // - etc.
+  
+  return Math.round(completenessScore);
+};
+
+const inferDataType = (columnData) => {
+  if (!columnData || columnData.length === 0) return 'Unknown';
+
+  // Get non-null values
+  const validValues = columnData.filter(value => 
+    value !== null && 
+    value !== undefined && 
+    value !== '' && 
+    !(typeof value === 'string' && value.trim() === '')
+  );
+
+  if (validValues.length === 0) return 'Empty';
+
+  // Check if all values are numbers
+  const isNumeric = validValues.every(value => {
+    const num = Number(value);
+    return !isNaN(num) && typeof num === 'number';
+  });
+  if (isNumeric) return 'Numeric';
+
+  // Check if all values are dates
+  const isDate = validValues.every(value => !isNaN(Date.parse(value)));
+  if (isDate) return 'Date';
+
+  // Check if all values are boolean
+  const isBool = validValues.every(value => 
+    typeof value === 'boolean' || 
+    value === 'true' || 
+    value === 'false' || 
+    value === '0' || 
+    value === '1'
+  );
+  if (isBool) return 'Boolean';
+
+  // Check if categorical (less than 10 unique values)
+  const uniqueValues = new Set(validValues);
+  if (uniqueValues.size <= 10) return 'Categorical';
+
+  // Default to text
+  return 'Text';
+};
+
 const Body = ({ backDialogOpen, setBackDialogOpen }) => {
-  const classes = useStyles();
   const dispatch = useDispatch();
-  const { response, model, name, type, mode } = useSelector((state) => state.model);
+  const navigate = useNavigate();
+  const { response, name, type, mode, histogram } = useSelector((state) => state.model);
+  const model = useSelector((state) => state.model);
   const [loadingOpen, setLoadingOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [columns, setColumns] = useState([]);
   const [isAuto, setIsAuto] = useState("Auto");
   const [algoValue, setAlgoValue] = useState("");
-  const navigate = useNavigate();
   const [elements, setElements] = useState({
     "Prediction Column": [],
     "ID Column": [],
@@ -784,6 +866,97 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
       quizComplete: false 
     }
   ]);
+
+  // Add severity map states
+  const [missingValuesSeverityMap, setMissingValuesSeverityMap] = useState({});
+  const [correlationSeverityMap, setCorrelationSeverityMap] = useState({});
+  const [outlierSeverityMap, setOutlierSeverityMap] = useState({});
+  const [dataQualityAlerts, setDataQualityAlerts] = useState({});
+
+  // Add severity check functions
+  const getMissingValuesSeverity = useCallback((column) => {
+    if (!histogram || !histogram[column]) {
+      return { severity: "info", message: "" };
+    }
+    
+    try {
+      const data = histogram[column];
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        return { severity: "error", message: "No data available" };
+      }
+
+      // Calculate missing values
+      const missingCount = data.filter(val => 
+        val === null || val === undefined || val === '' || 
+        (typeof val === 'string' && val.trim() === '')
+      ).length;
+      
+      const missingPercentage = (missingCount / data.length) * 100;
+      
+      if (missingCount === 0) {
+        return { severity: "success", message: "No missing values" };
+      } else if (missingPercentage > 50) {
+        return { 
+          severity: "error", 
+          message: `${column} has ${missingPercentage.toFixed(1)}% missing values - consider removing` 
+        };
+      } else if (missingPercentage > 20) {
+        return { 
+          severity: "warning", 
+          message: `${column} has ${missingPercentage.toFixed(1)}% missing values - consider imputation` 
+        };
+      }
+
+      return { severity: "success", message: `Only ${missingPercentage.toFixed(1)}% missing values` };
+    } catch (error) {
+      return { severity: "error", message: "Analysis error" };
+    }
+  }, [histogram]);
+
+  const getCorrelationSeverity = useCallback((column) => {
+    // For now, return info since we don't have correlation data in select view
+    return { severity: "info", message: "" };
+  }, []);
+
+  const getOutlierSeverity = useCallback((column) => {
+    // For now, return info since we don't have outlier data in select view
+    return { severity: "info", message: "" };
+  }, []);
+
+  // Add collectDataQualityAlerts function
+  const collectDataQualityAlerts = useCallback(() => {
+    const alerts = {};
+    
+    if (!response || !response.columns) return alerts;
+
+    response.columns.forEach(column => {
+      const columnAlerts = [];
+      
+      // Missing values alerts only
+      const missingValuesSeverity = getMissingValuesSeverity(column);
+      if (missingValuesSeverity.severity !== 'info') {
+        columnAlerts.push({
+          severity: missingValuesSeverity.severity,
+          message: missingValuesSeverity.message,
+          type: 'missing'
+        });
+      }
+
+      // Only add to alerts if we have any alerts (including success ones)
+      if (columnAlerts.length > 0) {
+        alerts[column] = columnAlerts;
+      }
+    });
+
+    return alerts;
+  }, [response, getMissingValuesSeverity]);
+
+  // Add effect to update alerts when severity maps change
+  useEffect(() => {
+    const alerts = collectDataQualityAlerts();
+    setDataQualityAlerts(alerts);
+  }, [collectDataQualityAlerts]);
 
   // FAB event handlers
   const handleFabToggle = () => {
@@ -972,15 +1145,14 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
     return `${scaledValue} %`;
   }
   const [value, setValue] = useState(50);
-  const [split, setSplit] = useState(50);
+  const [split, setSplit] = useState(70);
 
-  const handleChange = (event, newValue) => {
-    if (typeof newValue == 'number') {
-      setValue(newValue);
+  const handleSplitChange = (event, newValue) => {
+    if (newValue !== null) {
       setSplit(newValue);
-      console.log(split);
+      setValue(newValue);
     }
-  }
+  };
 
   const [alignment, setAlignment] = useState([0, 1, 2]);
 
@@ -997,6 +1169,23 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
   const handleBack1 = () => {
     navigate("/review");
   };
+
+  // Add effect to update severity maps when data changes
+  useEffect(() => {
+    if (!response || !response.columns) return;
+
+    const newMissingValuesSeverityMap = {};
+
+    response.columns.forEach(column => {
+      // Missing values severity
+      const missingValuesSeverity = getMissingValuesSeverity(column);
+      if (missingValuesSeverity.severity !== 'info') {
+        newMissingValuesSeverityMap[column] = missingValuesSeverity;
+      }
+    });
+
+    setMissingValuesSeverityMap(newMissingValuesSeverityMap);
+  }, [response, getMissingValuesSeverity]);
 
   return (
     <Box
@@ -1018,94 +1207,212 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
           minHeight: "100%",
         }}
       >
-        <Box sx={{ display: "flex" }} justifyContent="space-between">
-          <Box sx={{ display: "flex" }}>
-            <IconButton onClick={handleBack1}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography
+        {/* Header Section */}
+        <Box 
+          sx={{ 
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <IconButton 
+              onClick={() => setBackDialogOpen(true)}
               sx={{
-                fontSize: "1.5rem",
-                fontWeight: "600",
-                fontFamily: "'SF Pro Display', sans-serif",
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.08)'
+                }
               }}
             >
-              Model Training
-            </Typography>
-          </Box>
-          <Typography
-            sx={{
-              fontSize: "1.5rem",
-              fontWeight: "bolder",
-              fontFamily: "Open Sans",
-              display: "flex",
-              alignItems: "center",
-              cursor: "pointer"
-            }}
-            onClick={() => setOpenEdit(true)}
-          >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <img src={`/img/${type}.png`} alt={type} />
-                <span style={{ marginLeft: "5px" }}>{name}</span>
-              </div>
-          </Typography>
-        </Box>
-        <Box sx={{ width: "100%", display: "flex", gap: "2.5em" }}>
-          <Box width="20%">
-            <Box display="flex" flexDirection="column" justifyContent="space-between" sx={{ height: "35em" }}>
-              <Box
+              <ArrowBackIcon />
+            </IconButton>
+            <Box>
+            <Typography
+                variant="h4"
+              sx={{
+                  fontSize: { xs: "1.5rem", sm: "1.75rem", md: "1.2rem" },
+                  fontWeight: 700,
+                  fontFamily: "'SF Pro Display', sans-serif",
+                  color: "#1E293B",
+                  mb: 0.5
+                }}
+              >
+                Model Training
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: { xs: "0.8rem", sm: "0.95rem", md: ".95rem" },
+                  fontWeight: 400,
+                  fontFamily: "'SF Pro Display', sans-serif",
+                  color: "#64748B"
+                }}
+              >
+                Train your model to make predictions on new data
+              </Typography>
+            </Box>
+          </Box>          
+            <Paper
+              onClick={() => setOpenEdit(true)}
               sx={{
                 display: "flex",
                 alignItems: "center",
-              }}>
+                padding: "12px 20px",
+                borderRadius: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                border: "1px solid rgba(0, 0, 0, 0.08)",
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                }
+              }}
+            >
+              <img 
+                src={`${process.env.PUBLIC_URL}/img/${model.type}.png`} 
+                alt={model.type}
+                style={{ 
+                  width: 24, 
+                  height: 24,
+                  marginRight: 12
+                }}
+              />
               <Typography
-               alignItems="center"
                 sx={{
-                  fontSize: { xl: "1.2rem", lg: "1.1rem", md: "1rem" },
-                  fontWeight: "bolder",
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
                   fontFamily: "'SF Pro Display', sans-serif",
-                  marginTop:"1.1em",
-                  padding:"0em 0.3em 0em 1.8em"
+                  color: "#1E293B"
                 }}
               >
-                Algorithm Selection
+                {model.name}
               </Typography>
-              <HtmlTooltip
-                placement="right" title="Use the best performing algorithm or choose one manually.">
-                    <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", marginTop:".9em" }} />
-                </HtmlTooltip>
-              </Box>
-              
-              <CustomTooltip
-              open={tooltipId === 23 ? true : false}
-              onOpen={handleOpen}
-              onClose={handleClose}
-              title={
-                <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                  <Typography>Opt for 'Auto' for the best performing algorithm
-                    or 'Manual' to select your desired algorithm.</Typography>
-                  <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(22)} >PREVIOUS</Button>
-                    <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(24)} >NEXT</Button>
-                  </Box>
+            </Paper>
+        </Box>
+        <Box sx={{ width: "100%", display: "flex", gap: "2.5em" }}>
+          <Box sx={{
+            width: {
+              xs: "30%",
+              lg: "20%"
+            },
+            '@media (max-width: 1024px)': {
+              width: "35%"
+            }
+          }}>
+            <Box display="flex" flexDirection="column" justifyContent="space-between" sx={{ height: "35em" }}>
+              <Box sx={{ height: "5em", marginBottom: "1.8em" }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography
+                    sx={{
+                      fontSize: "1.2rem",
+                      fontWeight: "bolder",
+                      fontFamily: "'SF Pro Display', sans-serif",
+                      marginTop:".4em"
+                    }}
+                  >
+                    Algorithm Selection
+                  </Typography>
+                  <HtmlTooltip
+                    placement="right" 
+                    title="Use the best performing algorithm or choose one manually."
+                  >
+                    <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", ml: 1, mt: ".3em" }} />
+                  </HtmlTooltip>
                 </Box>
-              }
-              placement="right"
-              arrow
-            >
-              <Box>
-              <ToggleButtonGroup
-                value={isAuto}
-                exclusive
-                onChange={handleChecked}
-                aria-label="text alignment"
-                color="primary"
-                style={{ width: '100%' }} // Add this line to make it full width
-              >
-                <ToggleButton value="Auto" style={{ width: '50%' }}>Auto</ToggleButton> {/* And adjust the width here */}
-                <ToggleButton value="Manual" style={{ width: '50%' }}>Manual</ToggleButton> {/* And here */}
-              </ToggleButtonGroup>
+                <Typography
+                  sx={{
+                    fontSize: "1rem",
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    lineHeight: "1.1"
+                  }}
+                >
+                  Choose between automatic or manual algorithm selection
+                </Typography>
               </Box>
+              <CustomTooltip
+                open={tooltipId === 23 ? true : false}
+                onOpen={handleOpen}
+                onClose={handleClose}
+                title={
+                  <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                    <Typography>Opt for 'Auto' for the best performing algorithm
+                      or 'Manual' to select your desired algorithm.</Typography>
+                    <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(22)} >PREVIOUS</Button>
+                      <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(24)} >NEXT</Button>
+                    </Box>
+                  </Box>
+                }
+                placement="right"
+                arrow
+              >
+                <Box sx={{ width: '100%' }}>
+                  <ToggleButtonGroup
+                    value={isAuto}
+                    exclusive
+                    onChange={handleChecked}
+                    aria-label="algorithm selection mode"
+                    color="primary"
+                    sx={{
+                      width: '100%',
+                      '& .MuiToggleButton-root': {
+                        width: '50%',
+                        py: 1.5,
+                        border: '1px solid rgba(0, 0, 0, 0.25)',
+                        borderRadius: '8px !important',
+                        textTransform: 'none',
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        fontSize: '0.95rem',
+                        fontWeight: 500,
+                        color: '#64748B',
+                        '&:hover': {
+                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                        },
+                        '&.Mui-selected': {
+                          backgroundColor: '#1976d2',
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: '#1565c0',
+                          },
+                        },
+                      },
+                      '& .MuiToggleButton-root:not(:first-of-type)': {
+                        borderLeft: 'none',
+                      },
+                      '& .MuiToggleButton-root:first-of-type': {
+                        mr: 1,
+                      },
+                      gap: 1,
+                    }}
+                  >
+                    <ToggleButton 
+                      value="Auto"
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                        Auto
+                      </Box>
+                    </ToggleButton>
+                    <ToggleButton 
+                      value="Manual"
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                        Manual
+                      </Box>
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
               </CustomTooltip>
               <TextField
                 select
@@ -1114,8 +1421,12 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
                 value={algoValue}
                 onChange={handleAlgoChange}
                 disabled={isAuto === "Auto" ? true : false}
+                sx={{
+                  mt: 1.5,
+                  mb: 2
+                }}
               >
-                {model && model.model_type === "RG"
+                {model && model.type === "Regression"
                   ? regressionAlgos.map((algo) => (
                     <MenuItem key={algo.value} value={algo.value}>                      
                       <HtmlTooltip placement="right" title={algo.tooltip} sx={{fontFamily: "'SF Pro Display', sans-serif",}}> 
@@ -1135,201 +1446,330 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
                     </MenuItem>
                   ))}
               </TextField>   
-              <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-              }}>      
-              <Typography
-                sx={{
-                  fontSize: { xl: "1.2rem", lg: "1.1rem", md: "1rem" },
-                  fontWeight: "bolder",
-                  fontFamily: "'SF Pro Display', sans-serif",
-                  padding:"0em 0.3em 0em 1.6em"
-                }}
-              >
-                Data Split Percentage
-              </Typography>
-              <HtmlTooltip
-                placement="right" title="Decide percentage of data for training. The remainder will be used for testing. ">
-                    <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", }} />
-                </HtmlTooltip>
-              </Box>   
-              <Typography
-                id="non-linear-slider"
-                width="100%"
-                textAlign="center"
-                style={{
-                  border: "1px solid #2288FF",
-                  borderRadius: "3px",
-                  height:"3em",
-                  padding:"1em",
-                  paddingBottom:"2.4em",
-                  fontFamily: "Open Sans",
-                  fontWeight: "bold"
-
-                }}
-              >
-                {valueLabelFormat(value)}
-              </Typography>
+              <Box sx={{ height: "5em", marginBottom: "1.8em" }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography
+                    sx={{
+                      fontSize: "1.2rem",
+                      fontWeight: "bolder",
+                      fontFamily: "'SF Pro Display', sans-serif",
+                      marginTop:"1.1em"
+                    }}
+                  >
+                    Data Split Percentage
+                  </Typography>
+                  <HtmlTooltip
+                    placement="right" 
+                    title="Decide percentage of data for training. The remainder will be used for testing."
+                  >
+                    <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", ml: 1, mt: "1.1em" }} />
+                  </HtmlTooltip>
+                </Box>
+                <Typography
+                  sx={{
+                    fontSize: "1rem",
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    lineHeight: "1.1"
+                  }}
+                >
+                  Choose how much data to use for training your model
+                </Typography>
+              </Box>
               <CustomTooltip
-              open={tooltipId === 24 || tooltipId === 25 ? true : false}
-              onOpen={handleOpen}
-              onClose={handleClose}
-              title={
-                tooltipId === 24 ? (
-                <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                  <Typography>{"Define how you want to split your data for training and testing. A balanced split ensures a robust model performance."}</Typography>
-                  <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(23)} >PREVIOUS</Button>
-                    <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(25)} >NEXT</Button>
+                open={tooltipId === 24 || tooltipId === 25 ? true : false}
+                onOpen={handleOpen}
+                onClose={handleClose}
+                title={
+                  tooltipId === 24 ? (
+                    <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                      <Typography>{"Define how you want to split your data for training and testing. A balanced split ensures a robust model performance."}</Typography>
+                      <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(23)} >PREVIOUS</Button>
+                        <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(25)} >NEXT</Button>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                      <Typography>{"Consider using a 70-30 or 80-20 split for your data. These are common ratios that offer a good balance between training and testing."}</Typography>
+                      <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(24)}>PREVIOUS</Button>
+                        <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(26)}>NEXT</Button>
+                      </Box>
+                    </Box>
+                  )
+                }
+                placement="right"
+                arrow
+              >
+                <Box sx={{ width: '100%', mb: 2 }}>
+                  <ToggleButtonGroup
+                    value={split}
+                    exclusive
+                    onChange={handleSplitChange}
+                    aria-label="data split percentage"
+                    color="primary"
+                    sx={{
+                      width: '100%',
+                      '& .MuiToggleButton-root': {
+                        width: '33.33%',
+                        py: 2,
+                        border: '1px solid rgba(0, 0, 0, 0.25)',                      
+                        borderRadius: '8px !important',
+                        textTransform: 'none',
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        fontSize: '0.95rem',
+                        fontWeight: 500,
+                        color: '#64748B',
+                        flexDirection: 'column',
+                        gap: 0.5,
+                        '&:hover': {
+                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                        },
+                        '&.Mui-selected': {
+                          backgroundColor: '#1976d2',
+                          color: 'white',
+                          '&:hover': {
+                            backgroundColor: '#1565c0',
+                          },
+                        },
+                      },
+                      '& .MuiToggleButton-root:not(:first-of-type)': {
+                        borderLeft: 'none',
+                      },
+                      '& .MuiToggleButton-root:not(:last-child)': {
+                        mr: 1,
+                      },
+                      gap: 1,
+                    }}
+                  >
+                    <ToggleButton 
+                      value={70}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '1.1rem', fontWeight: 600 }}>70/30</Typography>
+                      <Typography 
+                        sx={{ 
+                          fontSize: '0.75rem', 
+                          opacity: 0.9,
+                          display: { xs: 'none', sm: 'block' }
+                        }}
+                      >
+                        Balanced split
+                      </Typography>
+                    </ToggleButton>
+                    <ToggleButton 
+                      value={80}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '1.1rem', fontWeight: 600 }}>80/20</Typography>
+                      <Typography 
+                        sx={{ 
+                          fontSize: '0.75rem', 
+                          opacity: 0.9,
+                          display: { xs: 'none', sm: 'block' }
+                        }}
+                      >
+                        More training
+                      </Typography>
+                    </ToggleButton>
+                    <ToggleButton 
+                      value={90}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '1.1rem', fontWeight: 600 }}>90/10</Typography>
+                      <Typography 
+                        sx={{ 
+                          fontSize: '0.75rem', 
+                          opacity: 0.9,
+                          display: { xs: 'none', sm: 'block' }
+                        }}
+                      >
+                        Maximum training
+                      </Typography>
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  <Box 
+                    sx={{ 
+                      mt: 1,
+                      p: 1.5,
+                      borderRadius: 1,
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                      border: '1px solid rgba(25, 118, 210, 0.1)',
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '0.875rem',
+                        color: '#1976d2',
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        textAlign: 'center'
+                      }}
+                    >
+                      {split === 70 && "Balanced split ideal for general scenarios"}
+                      {split === 80 && "More training data for improved learning, with a solid test set"}
+                      {split === 90 && "Maximize training data; use when data is abundant"}
+                    </Typography>
                   </Box>
                 </Box>
-                ) : (
-                  <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                    <Typography>{"Consider using a 70-30 or 80-20 split for your data. These are common ratios that offer a good balance between training and testing."}</Typography>
-                    <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(24)}>PREVIOUS</Button>
-                      <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(26)}>NEXT</Button>
-                    </Box>
-                  </Box>
-                )
-              }
-              placement="right"
-              arrow
-            >
-              <Box width="100%">
-              <Slider
-                value={split}                
-                min={20}
-                max={80}
-                step={1}
-                valueLabelFormat={valueLabelFormat}
-                onChange={handleChange}
-                // valueLabelDisplay="auto"
-                aria-labelledby="non-linear-slider"
-              />
-              </Box>
               </CustomTooltip>
-              {model.model_type === "RG" ?
+              {model.type === "Regression" ?
                 <>
-                <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-              }}>
+                <Box sx={{ height: "5em", marginBottom: "1.5em" }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography
+                      sx={{
+                        fontSize: "1.2rem",
+                        fontWeight: "bolder",
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        marginTop:"1.1em"
+                      }}
+                    >
+                      Prediction Column Unit
+                    </Typography>
+                    <HtmlTooltip
+                      placement="right" 
+                      title="Specify the Unit for the prediction column. Example: %, Dollars, years, Degree Celsius"
+                    >
+                      <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", ml: 1, mt: "1.1em" }} />
+                    </HtmlTooltip>
+                  </Box>
                   <Typography
                     sx={{
-                      fontSize: { xl: "1.2rem", lg: "1.1rem", md: "1rem" },
-                      fontWeight: "bolder",
+                      fontSize: "1rem",
                       fontFamily: "'SF Pro Display', sans-serif",
-                      padding:"0em 0.5em 0em 0.9em"
+                      lineHeight: "1.1"
                     }}
                   >
-                    Prediction Column Unit
+                    Define the measurement unit for your predictions
                   </Typography>
-                  <HtmlTooltip
-                placement="right" title="Specify the Unit for the prediction column. Example: %, Dollars, years, Degree Celsius">
-                    <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", }} />
-                </HtmlTooltip>
-                  </Box>
-                  <CustomTooltip
-                    open={tooltipId === 26 ? true : false}
-                    onOpen={handleOpen}
-                    onClose={handleClose}
-                    title={
-                      <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                        <Typography>Specify the unit for your prediction column. <br />
-                            Example Units: years, cm, %, $.</Typography>
-                        <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(25)} >PREVIOUS</Button>
-                          <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(27)} >NEXT</Button>
-                        </Box>
+                </Box>
+                <CustomTooltip
+                  open={tooltipId === 26 ? true : false}
+                  onOpen={handleOpen}
+                  onClose={handleClose}
+                  title={
+                    <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                      <Typography>Specify the unit for your prediction column. <br />
+                          Example Units: years, cm, %, $.</Typography>
+                      <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(25)} >PREVIOUS</Button>
+                        <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(27)} >NEXT</Button>
                       </Box>
-                    }
-                    placement="right"
-                    arrow
-                  >
-                    <Box sx={{width: "100%"}}>
-                  <OutlinedInput
-                    sx={{width: "100%",
-                    padding:"0.8em"}}
-                    placeholder="Unit for Prediction Column"
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                  />
+                    </Box>
+                  }
+                  placement="right"
+                  arrow
+                >
+                  <Box sx={{width: "100%"}}>
+                    <OutlinedInput
+                      sx={{
+                        width: "100%",
+                        padding: "0.8em",
+                        fontFamily: "'SF Pro Display', sans-serif",
+                      }}
+                      placeholder="Unit for Prediction Column"
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                    />
                   </Box>
-                  </CustomTooltip>
+                </CustomTooltip>
                 </> :
                 <>
-                <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-              }}>
+                <Box sx={{ height: "5em", marginBottom: "1.2em" }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Typography
+                      sx={{
+                        fontSize: "1.1rem",
+                        fontWeight: "bolder",
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        marginTop:"1.1em"
+                      }}
+                    >
+                      Prediction Column Labels
+                    </Typography>
+                    <HtmlTooltip
+                      placement="right" 
+                      title="Labels that represent 0 and 1 in the prediction column. Example: 0=Not Spam & 1=Spam, 0=Healthy & 1=Diseased"
+                    >
+                      <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", ml: 1, mt: "1.1em" }} />
+                    </HtmlTooltip>
+                  </Box>
                   <Typography
                     sx={{
-                      fontSize: { xl: "1.2rem", lg: "1.1rem", md: "1rem" },
-                      fontWeight: "bolder",
+                      fontSize: "1rem",
                       fontFamily: "'SF Pro Display', sans-serif",
-                      padding:"0em 0.5em 0em 0.9em"
+                      lineHeight: "1.1"
                     }}
                   >
-                    Prediction Column Label
+                    Specify meaningful labels for binary classification
                   </Typography>
-                  <HtmlTooltip
-                placement="right" title="Labels that represent 0 and 1 in the prediction column. Example: 0=Not Spam & 1=Spam, 0=Healthy & 1=Diseased ">
-                    <HelpIcon fontSize="small" sx={{ color: "#a3bbd4", }} />
-                </HtmlTooltip>
-                  </Box>
-                  <CustomTooltip
-                    open={tooltipId === 26 ? true : false}
-                    onOpen={handleOpen}
-                    onClose={handleClose}
-                    title={
-                      <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                        <Typography>{"Label the values that represent 0 and 1 in your prediction column."} <br /> {"Example Labels: 0=Not Spam & 1=Spam, 0=Healthy & 1=Diseased "}</Typography>
-                        <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(25)} >PREVIOUS</Button>
-                          <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(27)} >NEXT</Button>
-                        </Box>
+                </Box>
+                <CustomTooltip
+                  open={tooltipId === 26 ? true : false}
+                  onOpen={handleOpen}
+                  onClose={handleClose}
+                  title={
+                    <Box padding="10px" display="flex" flexDirection="column" gap="10px">
+                      <Typography>{"Label the values that represent 0 and 1 in your prediction column."} <br /> {"Example Labels: 0=Not Spam & 1=Spam, 0=Healthy & 1=Diseased "}</Typography>
+                      <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(25)} >PREVIOUS</Button>
+                        <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(27)} >NEXT</Button>
                       </Box>
-                    }
-                    placement="right"
-                    arrow
-                  >
-                    <Box sx={{width: "100%"}}>
-                  <OutlinedInput
-                  value={label0}
-                  onChange={(e) => setLabel0(e.target.value)}
-                    sx={{width: "100%",
-                          padding:"0.8em",
-                          marginBottom: "1em"}}
-                    placeholder="Label for Value 0"
-                  />
-                  
-                  
-                  <OutlinedInput
-                  value={label1}
-                  onChange={(e) => setLabel1(e.target.value)}
-                    sx={{width: "100%",
-                          padding:"0.8em"}}
-                    placeholder="Label for Value 1"
-                  />
+                    </Box>
+                  }
+                  placement="right"
+                  arrow
+                >
+                  <Box sx={{width: "100%", display: "flex", flexDirection: "column", gap: 1.5, mt: .5}}>
+                    <OutlinedInput
+                      value={label0}
+                      onChange={(e) => setLabel0(e.target.value)}
+                      sx={{
+                        width: "100%",
+                        fontFamily: "'SF Pro Display', sans-serif",
+                      }}
+                      placeholder="Label for Value 0 (e.g., Not Spam)"
+                    />
+                    <OutlinedInput
+                      value={label1}
+                      onChange={(e) => setLabel1(e.target.value)}
+                      sx={{
+                        width: "100%",
+                        fontFamily: "'SF Pro Display', sans-serif",
+                      }}
+                      placeholder="Label for Value 1 (e.g., Spam)"
+                    />
                   </Box>
-                  </CustomTooltip>                  
+                </CustomTooltip>
                 </>}
             </Box>
           </Box>
           <Divider orientation="vertical" flexItem />
-          <Box width="40%">
+          <Box sx={{
+            width: {
+              xs: "70%",
+              lg: "40%"
+            },
+            '@media (max-width: 1024px)': {
+              width: "70%"
+            }
+          }}>
             <Box sx={{ height: "5em" }}>
               <Typography
                 sx={{
                   fontSize: "1.2rem",
                   fontWeight: "bolder",
                   fontFamily: "'SF Pro Display', sans-serif",
-                  marginTop:"1.1em"
+                  marginTop:".4em"
                 }}
               >
                 Column Mapping
@@ -1349,20 +1789,30 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
               setElements={setElements}
               tooltipId={tooltipId}
               setTooltipId={setTooltipId}
+              dataQualityAlerts={dataQualityAlerts}
             />
           </Box>
-          <Divider orientation="vertical" flexItem />
-          <Box width="40%">
+          <Divider sx={{display: {xs: "none", lg: "block"}}} orientation="vertical" flexItem />
+          <Box sx={{
+            width: "40%",
+            display: {
+              xs: "none",
+              lg: "block"
+            },
+            '@media (max-width: 1024px)': {
+              display: "none"
+            }
+          }}>
             <Box sx={{ height: "5em" }}>
               <Typography
                 sx={{
                   fontSize: "1.2rem",
                   fontWeight: "bolder",
                   fontFamily: "'SF Pro Display', sans-serif",
-                  marginTop:"1.1em"
+                  marginTop: ".4em"
                 }}
               >
-                Data Viewer
+                Data Quality Overview
               </Typography>
               <Typography
                 sx={{
@@ -1370,85 +1820,388 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
                   fontFamily: "'SF Pro Display', sans-serif",
                 }}
               >
-                Click on the column boxes to peek into your data
+                Analyze and understand your dataset's health
               </Typography>
             </Box>
-            <CustomTooltip
-              open={tooltipId === 32 ? true : false}
-              onOpen={handleOpen}
-              onClose={handleClose}
-              title={
-                <Box padding="10px" display="flex" flexDirection="column" gap="10px">
-                  <Typography>Get a quick glance at your data. Click on the columns and review the top rows of your 
-                        dataset to ensure correct column mapping.</Typography>
-                  <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Button variant="contained" startIcon={<ArrowBackIos />} onClick={() => setTooltipId(31)}>PREVIOUS</Button>
-                    <Button variant="contained" endIcon={<ArrowForwardIos />} onClick={() => setTooltipId(33)}>NEXT</Button>
-                  </Box>
-                </Box>
-              }
-              placement="left"
-              arrow
-            >
-             <Box width="100%" sx={{marginTop:"0.3em", marginBottom:"0.3em"}}>
-                <Box sx={{
-                    height: '150px',  // Fixed height
-                    overflowY: 'auto',  // Enable vertical scrolling
-                    // Hide scrollbar
-                    '&::-webkit-scrollbar': {
-                        display: 'none'
-                    },
-                    msOverflowStyle: 'none',
-                    scrollbarWidth: 'none'
-                }}>
-                    <ToggleButtonGroup value={alignment} onChange={handleAlignment}
-                                        aria-label="text alignment" color="primary"
-                                        style={{display: "flex", flexWrap: "wrap"}}>
-                        {
-                            response.columns.map((item, index) =>
-                                <ToggleButton key={index} style={{
-                                    margin: "5px",
-                                    border: "1px solid",
-                                    borderRadius: "5px",
-                                    padding: "5px",
-                                    fontFamily: "'SF Pro Display', sans-serif",                                                
-                                }}
-                                sx = {{fontSize: {xl: "0.9rem", lg: "0.8rem", md: "0.7rem"},}}
-                                value={index}>{item}</ToggleButton>
-                            )
-                        }
-                    </ToggleButtonGroup>
-                </Box>
-            </Box>
-            </CustomTooltip>
-            <Box overflow="auto">
-            <Table width="100%">
-            <TableHead width="100%" style={{ backgroundColor: "#EEEEEE"}}>
-              <tr> {/* Add this <tr> tag to wrap your <TableCell> tags */}
-                {alignment.map((one, index) =>
-                  <th key={one}> {/* Use <th> for header cells */}
-                    <Typography fontSize="1.2em" style={{ width: "fit-content", fontFamily: "'SF Pro Display', sans-serif", fontWeight:"800", padding:"5px"}}>
-                      {response.columns[one]}
+
+            {/* Top-Level Summary Cards */}
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 2, 
+              mb: 3,
+              flexWrap: 'wrap'
+            }}>
+              {/* Total Rows Card */}
+              <Paper
+                elevation={0}
+                sx={{
+                  flex: 1,
+                  minWidth: '140px',
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                  }
+                }}
+              >
+                <HtmlTooltip
+                  title="Total number of records in your dataset"
+                  placement="top"
+                  arrow
+                >
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#1976d2',
+                        mb: 1
+                      }}
+                    >
+                      {response.histogram[response.columns[0]]?.length || 0}
                     </Typography>
-                  </th>
-                )}
-              </tr> {/* Close the <tr> tag here */}
-            </TableHead>
-            <TableBody>
-              {rows.map((row, rowIndex) =>
-                <TableRow key={`row-${rowIndex}`}>
-                  {alignment.map((one, cellIndex) =>
-                    <TableCell key={`cell-${rowIndex}-${cellIndex}`}>
-                      {response.histogram[response.columns[one]][row]}
-                    </TableCell>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    <Typography
+                      sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#64748B'
+                      }}
+                    >
+                      Total Rows
+                    </Typography>
+                  </Box>
+                </HtmlTooltip>
+              </Paper>
 
+              {/* Total Columns Card */}
+              <Paper
+                elevation={0}
+                sx={{
+                  flex: 1,
+                  minWidth: '140px',
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                  }
+                }}
+              >
+                <HtmlTooltip
+                  title="Total number of features in your dataset"
+                  placement="top"
+                  arrow
+                >
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#1976d2',
+                        mb: 1
+                      }}
+                    >
+                      {response.columns?.length || 0}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#64748B'
+                      }}
+                    >
+                      Total Columns
+                    </Typography>
+                  </Box>
+                </HtmlTooltip>
+              </Paper>
 
+              {/* Missing Values Card */}
+              <Paper
+                elevation={0}
+                sx={{
+                  flex: 1,
+                  minWidth: '140px',
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                  }
+                }}
+              >
+                <HtmlTooltip
+                  title="Percentage of missing values across all columns"
+                  placement="top"
+                  arrow
+                >
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#1976d2',
+                        mb: 1
+                      }}
+                    >
+                      {`${calculateMissingPercentage(response)}%`}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#64748B'
+                      }}
+                    >
+                      Missing Values
+                    </Typography>
+                  </Box>
+                </HtmlTooltip>
+              </Paper>
+
+              {/* Data Quality Score Card */}
+              <Paper
+                elevation={0}
+                sx={{
+                  flex: 1,
+                  minWidth: '140px',
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                  }
+                }}
+              >
+                <HtmlTooltip
+                  title="Overall data quality score based on completeness and validity"
+                  placement="top"
+                  arrow
+                >
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#1976d2',
+                        mb: 1
+                      }}
+                    >
+                      {calculateDataQualityScore(response)}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        fontFamily: "'SF Pro Display', sans-serif",
+                        color: '#64748B'
+                      }}
+                    >
+                      Quality Score
+                    </Typography>
+                  </Box>
+                </HtmlTooltip>
+              </Paper>
             </Box>
+
+            {/* Column-by-Column Data Health Summary */}
+            <Box sx={{ mt: 4 }}>
+              <Typography
+                sx={{
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  fontFamily: "'SF Pro Display', sans-serif",
+                  mb: 2
+                }}
+              >
+                Column Health Summary
+              </Typography>
+
+              <Box sx={{ 
+                maxHeight: '400px',
+                overflowY: 'auto',
+                pr: 2,
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: '#f1f1f1',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: '#888',
+                  borderRadius: '4px',
+                  '&:hover': {
+                    background: '#555',
+                  },
+                },
+              }}>
+                {response.columns.map((column, index) => {
+                  const columnData = response.histogram[column];
+                  const missingCount = columnData?.filter(value => 
+                    value === null || 
+                    value === undefined || 
+                    value === '' || 
+                    (typeof value === 'string' && value.trim() === '')
+                  ).length || 0;
+                  const totalCount = columnData?.length || 0;
+                  const missingPercentage = totalCount === 0 ? 0 : Math.round((missingCount / totalCount) * 100);
+                  const uniqueValues = new Set(columnData).size;
+
+                  return (
+                    <Paper
+                      key={column}
+                      elevation={0}
+                      sx={{
+                        p: 2,
+                        mb: 2,
+                        borderRadius: 2,
+                        border: '1px solid rgba(0, 0, 0, 0.12)',
+                        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateX(4px)',
+                          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Typography
+                          sx={{
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                            fontFamily: "'SF Pro Display', sans-serif",
+                            color: '#1E293B'
+                          }}
+                        >
+                          {column}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: '0.875rem',
+                            fontFamily: "'SF Pro Display', sans-serif",
+                            color: '#64748B'
+                          }}
+                        >
+                          {uniqueValues} unique values
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {/* Missing Data Progress Bar */}
+                        <Box sx={{ flex: 1 }}>
+                          <Box
+                            sx={{
+                              height: '8px',
+                              borderRadius: '4px',
+                              bgcolor: '#E2E8F0',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: `${100 - missingPercentage}%`,
+                                height: '100%',
+                                bgcolor: missingPercentage > 50 ? '#EF4444' : missingPercentage > 20 ? '#F59E0B' : '#22C55E',
+                                transition: 'width 0.3s ease-in-out'
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                        
+                        {/* Missing Percentage */}
+                        <Typography
+                          sx={{
+                            minWidth: '90px',
+                            fontSize: '0.875rem',
+                            fontFamily: "'SF Pro Display', sans-serif",
+                            color: missingPercentage > 50 ? '#EF4444' : missingPercentage > 20 ? '#F59E0B' : '#22C55E',
+                            textAlign: 'right'
+                          }}
+                        >
+                          {missingPercentage}% missing
+                        </Typography>
+                      </Box>
+
+                      {/* Column Stats */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 3, 
+                        mt: 1.5,
+                        flexWrap: 'wrap'
+                      }}>
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontSize: '0.75rem',
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              color: '#64748B',
+                              mb: 0.5
+                            }}
+                          >
+                            Sample Values
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: '0.875rem',
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              color: '#1E293B'
+                            }}
+                          >
+                            {columnData?.slice(0, 3).map(value => 
+                              value === null || value === undefined || value === '' ? 'N/A' : String(value)
+                            ).join(', ')}
+                          </Typography>
+                        </Box>
+                        
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontSize: '0.75rem',
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              color: '#64748B',
+                              mb: 0.5
+                            }}
+                          >
+                            Data Type
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: '0.875rem',
+                              fontFamily: "'SF Pro Display', sans-serif",
+                              color: '#1E293B'
+                            }}
+                          >
+                            {inferDataType(columnData)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  );
+                })}
+              </Box>
+            </Box>
+
+            {/* We'll add the Distribution Visualizations in the next edit */}
           </Box>
         </Box>        
         <Box sx={{ display: "flex", justifyContent: "flex-end", marginTop: "1em" }}>

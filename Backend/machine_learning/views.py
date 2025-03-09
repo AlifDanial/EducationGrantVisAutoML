@@ -1,20 +1,22 @@
 import os
 import traceback
 
-from rest_framework import viewsets, status, decorators
+from rest_framework import viewsets, status, decorators, views
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from django.shortcuts import render
+from django.http import JsonResponse
+from multiprocessing import Process
+import threading
+import pandas as pd
+import os
+
+
 from .serializers import ModelSerializer, ModelDescriptionSerializer
 from .models import Model, ModelDescription
 from .review import get_review
 from .regression_custom_explainer import finishing
-from django.shortcuts import render
-from multiprocessing import Process
-import threading
 from .dashboard import runModel
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-# import openai
 
 def index(request):
     # print(request)
@@ -41,6 +43,9 @@ def dashboard(request, pk):
 #     )
 
 #     return JsonResponse({'response': response.choices[0].text})
+
+
+
 
 class ModelViewSet(viewsets.ViewSet):
 

@@ -14,7 +14,7 @@ const MainContent = () => {
       <Box width="100%" zIndex="0" marginTop="50px">
         <Box position="absolute" width="100%" display="flex" justifyContent="space-between" zIndex="-1" bottom="0px">
           <Box><img src={asset1} style={{maxWidth:"400px", maxHeight:"600px"}} /></Box>
-          <Box sx={{visibility: {lg: "visible", md: "visible", sm: "hidden", xs: "hidden"}}}><img src="./img/land/asset-2.png" style={{maxWidth:"400px", maxHeight:"600px"}} /></Box>
+          <Box sx={{visibility: {lg: "visible", md: "visible", sm: "hidden", xs: "hidden"}}}><img src={`${process.env.PUBLIC_URL}/img/land/asset-2.png`} style={{maxWidth:"400px", maxHeight:"600px"}} /></Box>
         </Box>
         <Box position="absolute" width="100%" height="750px" top="0" left="0" display="flex" justifyContent="center" zIndex="-1">
           <img src={backline} width="1300px"/>

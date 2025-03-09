@@ -11,6 +11,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from django.views.generic import TemplateView
 from django.views.static import serve
+from django.urls import path
 import os
 
 urlpatterns = [

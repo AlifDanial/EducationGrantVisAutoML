@@ -7,7 +7,7 @@ const ContactUs = () => {
   return (
     <Grid container id="Contact" position="relative" zIndex="0">
       <Box position="absolute" left="-135px" top="200px" zIndex="-1">
-        <img src="./img/land/Ellipse2.png" style={{ maxWidth: "270px", maxHeight: "270px" }} />
+        <img src={`${process.env.PUBLIC_URL}/img/land/Ellipse2.png`} style={{ maxWidth: "270px", maxHeight: "270px" }} />
       </Box>
       <Typography
         width="100%"
@@ -59,7 +59,7 @@ const ContactUs = () => {
         <Grid item md={1}></Grid>
         <Grid item md={5.5} display="flex" flexDirection="column" alignItems="center">
           <img
-            src="./img/land/contactus.png"
+            src={`${process.env.PUBLIC_URL}/img/land/contactus.png`}
             style={{
               maxWidth: "100%",
               maxHeight: "100%"

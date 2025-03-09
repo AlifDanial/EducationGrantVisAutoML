@@ -405,7 +405,7 @@ export const mlQuizQuestions = [
       "They are the same thing"
     ],
     correctAnswer: "Machine Learning is a subset of AI",
-    explanation: "Machine Learning (ML) is defined as a subset of Artificial Intelligence (AI). It allows computers to learn and improve from data without explicit programming. It's like teaching a computer by showing it examples until it understands patterns. ML is used in various tasks, from predicting house prices to diagnosing diseases. It's everywhere—from self-driving cars to personalized recommendations!"
+    explanation: "Machine Learning is a branch of AI that enables computers to learn from data and improve without explicit programming, powering applications from recommendations to self-driving cars."
   },
   {
     question: "What are the main steps in the Machine Learning process?",
@@ -416,7 +416,7 @@ export const mlQuizQuestions = [
       "Collect data, clean data, deploy model"
     ],
     correctAnswer: "Define problem, collect data, preprocess data, train model, evaluate model",
-    explanation: "ML works through a series of steps: first defining the problem, then collecting relevant data, preprocessing it for analysis, training a model to learn patterns, and finally evaluating the model's performance."
+    explanation: "The ML process involves defining the problem, collecting relevant data, preprocessing it, training a model to learn patterns, and evaluating its performance."
   },
   {
     question: "What are the three main approaches to Machine Learning?",
@@ -427,7 +427,7 @@ export const mlQuizQuestions = [
       "Classification, Regression, and Clustering learning"
     ],
     correctAnswer: "Supervised, Unsupervised, and Reinforcement learning",
-    explanation: "Machine Learning has three main approaches: Supervised learning (using labeled data), Unsupervised learning (finding hidden patterns), and Reinforcement learning (improving through feedback)."
+    explanation: "The three main approaches are Supervised learning (using labeled data), Unsupervised learning (finding patterns), and Reinforcement learning (learning through feedback)."
   },
   {
     question: "What is the key characteristic of supervised learning?",
@@ -438,7 +438,7 @@ export const mlQuizQuestions = [
       "It only works with numerical data"
     ],
     correctAnswer: "It uses labeled data for training",
-    explanation: "Supervised learning is trained using labeled data, which includes both input features (independent variables) and their corresponding correct outputs (dependent variable or target)."
+    explanation: "Supervised learning uses labeled data that includes both input features and their corresponding correct outputs to train predictive models."
   },
   {
     question: "What is the main difference between classification and regression in supervised learning?",
@@ -449,7 +449,7 @@ export const mlQuizQuestions = [
       "Classification uses more data than regression"
     ],
     correctAnswer: "Classification sorts data into categories while regression predicts numerical values",
-    explanation: "Classification is about sorting data into different categories or classes, while regression helps forecast quantities or continuous numerical values."
+    explanation: "Classification assigns data to categories (like spam/not spam), while regression predicts continuous numerical values (like house prices or temperature)."
   },
   {
     question: "What type of questions is regression best suited to answer?",
@@ -460,7 +460,7 @@ export const mlQuizQuestions = [
       "'True or False' questions"
     ],
     correctAnswer: "'How much?' or 'How many?' questions",
-    explanation: "Regression is useful for answering questions like 'How much?' or 'How many?' as it focuses on forecasting numerical values rather than categorizing data."
+    explanation: "Regression answers quantitative questions like 'How much?' or 'How many?' by predicting numerical values rather than categorical outcomes."
   },
   {
     question: "What is a real-world example of classification in action?",
@@ -471,7 +471,7 @@ export const mlQuizQuestions = [
       "Forecasting housing prices"
     ],
     correctAnswer: "Sorting emails into spam or inbox",
-    explanation: "Classification is used for sorting data into distinct categories, like sorting emails into spam or inbox, or classifying bird species by photos."
+    explanation: "Email spam filtering is a classic classification example, where the model categorizes incoming messages as either legitimate or unwanted spam."
   },
   {
     question: "What type of prediction would require regression analysis?",
@@ -482,7 +482,7 @@ export const mlQuizQuestions = [
       "Sorting items into baskets"
     ],
     correctAnswer: "Predicting house prices",
-    explanation: "Regression helps predict continuous numerical values, making it ideal for tasks like predicting house prices, future sales figures, or temperature forecasts."
+    explanation: "House price prediction requires regression because it involves forecasting a continuous numerical value based on features like location and size."
   }
 ];
 
@@ -496,7 +496,7 @@ export const dataBasicsQuizQuestions = [
       "Integer and floating-point data"
     ],
     correctAnswer: "Numerical and categorical data",
-    explanation: "Machine learning data is primarily divided into numerical data (continuous values and discrete counts) and categorical data (nominal and ordinal categories)."
+    explanation: "Machine learning primarily uses numerical data (continuous values and counts) and categorical data (nominal and ordinal categories)."
   },
   {
     question: "How is categorical data classified?",
@@ -507,7 +507,7 @@ export const dataBasicsQuizQuestions = [
       "Quantitative and qualitative"
     ],
     correctAnswer: "Nominal (no order) and ordinal (with order)",
-    explanation: "Categorical data is divided into nominal categories with no inherent order (like colors) and ordinal categories with meaningful order (like size rankings)."
+    explanation: "Categorical data is either nominal with no inherent order (like colors) or ordinal with meaningful ranking (like size: small, medium, large)."
   },
   {
     question: "In the puzzle analogy for machine learning datasets, what represents the 'picture on the box'?",
@@ -518,7 +518,7 @@ export const dataBasicsQuizQuestions = [
       "The target variable" // correct - index 3
     ],
     correctAnswer: "The target variable",
-    explanation: "In the puzzle analogy, the target variable is like the picture on the box that guides the solution, while features are like the puzzle pieces."
+    explanation: "The target variable is like the puzzle's picture, guiding the solution, while features are the puzzle pieces used to reconstruct it."
   },
   {
     question: "What is a dependent variable in machine learning?",
@@ -529,7 +529,7 @@ export const dataBasicsQuizQuestions = [
       "The model parameters"
     ],
     correctAnswer: "The outcome or value that a model aims to predict",
-    explanation: "The dependent variable, also known as the target, is the outcome that the model tries to predict based on the independent variables."
+    explanation: "The dependent variable is the outcome the model predicts, influenced by independent variables (features) that serve as inputs."
   },
   {
     question: "What type of numerical data would 'temperature' be classified as?",
@@ -540,7 +540,7 @@ export const dataBasicsQuizQuestions = [
       "Continuous data" // correct - index 3
     ],
     correctAnswer: "Continuous data",
-    explanation: "Temperature is an example of continuous numerical data as it can take any value within a range."
+    explanation: "Temperature is continuous numerical data because it can take any value within a range, not just specific discrete points."
   },
   {
     question: "In house price prediction, what role do features like square footage and number of bedrooms play?",
@@ -551,7 +551,7 @@ export const dataBasicsQuizQuestions = [
       "Outcome variables"
     ],
     correctAnswer: "Independent variables",
-    explanation: "Square footage and number of bedrooms are independent variables (features) that help predict the dependent variable (house price)."
+    explanation: "Square footage and bedrooms are independent variables (features) that help predict the dependent variable (house price)."
   },
   {
     question: "Which of these is an example of ordinal categorical data?",
@@ -562,7 +562,7 @@ export const dataBasicsQuizQuestions = [
       "Colors (red, blue, green)"
     ],
     correctAnswer: "Size rankings (small, medium, large)",
-    explanation: "Size rankings are ordinal categorical data because they have a meaningful order (small < medium < large)."
+    explanation: "Size rankings are ordinal because they have a meaningful order (small < medium < large), unlike nominal data like colors."
   },
   {
     question: "What is the relationship between features and the target variable in machine learning?",
@@ -573,7 +573,7 @@ export const dataBasicsQuizQuestions = [
       "There is no relationship between them"
     ],
     correctAnswer: "Features are used to predict the target variable",
-    explanation: "Features (independent variables) are used as inputs to predict or explain the target variable (dependent variable)."
+    explanation: "Features (independent variables) serve as inputs that the model uses to predict or estimate the target variable (dependent variable)."
   }
 ];
 
@@ -587,7 +587,7 @@ export const dataPreprocessingQuizQuestions = [
       "Data encryption"
     ],
     correctAnswer: "Data preprocessing",
-    explanation: "Data preprocessing is the crucial process that transforms raw, messy data into a clean, usable format by handling issues like missing values, scaling, and formatting."
+    explanation: "Data preprocessing transforms raw data into a clean, usable format by handling missing values, scaling, and formatting for analysis."
   },
   {
     question: "Which of the following is NOT typically included in data preprocessing steps?",
@@ -598,7 +598,7 @@ export const dataPreprocessingQuizQuestions = [
       "Reducing data by removing unnecessary parts"
     ],
     correctAnswer: "Creating the final prediction model",
-    explanation: "Data preprocessing includes cleaning, transforming, integrating, and reducing data, but creating the final prediction model is a separate step that follows preprocessing."
+    explanation: "Preprocessing includes cleaning, transforming, and reducing data, but creating the prediction model is a separate step that follows preprocessing."
   },
   {
     question: "Why might a dataset with a large percentage of missing values be problematic?",
@@ -609,7 +609,7 @@ export const dataPreprocessingQuizQuestions = [
       "It increases the processing speed"
     ],
     correctAnswer: "It can lead to unreliable model predictions",
-    explanation: "When too much data is missing, the remaining information might not accurately represent the underlying patterns, leading to unreliable predictions."
+    explanation: "Excessive missing data means remaining information may not accurately represent patterns, leading to unreliable or biased predictions."
   },
   {
     question: "What is a common threshold for acceptable missing data in a dataset?",
@@ -620,7 +620,7 @@ export const dataPreprocessingQuizQuestions = [
       "Any amount is acceptable"
     ],
     correctAnswer: "No more than 10-15%",
-    explanation: "Generally, datasets with more than 10-15% missing values may compromise the reliability of analysis results and model performance."
+    explanation: "Generally, datasets should have no more than 10-15% missing values to maintain reliability and statistical validity."
   },
   {
     question: "Which of these is an example of continuous numerical data?",
@@ -631,7 +631,7 @@ export const dataPreprocessingQuizQuestions = [
       "Payment method"
     ],
     correctAnswer: "House price ($350,000)",
-    explanation: "House price is continuous numerical data because it can take any value within a range, unlike discrete data which takes specific countable values."
+    explanation: "House price is continuous numerical data because it can take any value within a range, unlike discrete data with specific values."
   },
   {
     question: "What problem occurs when a machine learning dataset has 95% of samples in one class and 5% in another?",
@@ -642,7 +642,7 @@ export const dataPreprocessingQuizQuestions = [
       "Data leakage"
     ],
     correctAnswer: "Class imbalance",
-    explanation: "Class imbalance occurs when classes are not represented equally in a dataset, which can bias models toward the majority class and reduce accuracy for minority classes."
+    explanation: "Class imbalance occurs when classes aren't equally represented, potentially biasing models toward the majority class and reducing minority class accuracy."
   },
   {
     question: "Which technique creates new synthetic examples of the minority class to address imbalanced data?",
@@ -653,7 +653,7 @@ export const dataPreprocessingQuizQuestions = [
       "Z-score normalization"
     ],
     correctAnswer: "SMOTE (Synthetic Minority Over-sampling Technique)",
-    explanation: "SMOTE generates synthetic examples of the minority class by interpolating between existing minority instances, helping balance the class distribution."
+    explanation: "SMOTE generates synthetic examples of minority classes by interpolating between existing instances, helping balance class distribution."
   },
   {
     question: "When handling categorical data like 'City' or 'Payment Method' for machine learning, what must typically be done?",
@@ -664,7 +664,7 @@ export const dataPreprocessingQuizQuestions = [
       "Use only as labels, not features"
     ],
     correctAnswer: "Convert it to numerical representation",
-    explanation: "Most machine learning algorithms require numerical input, so categorical data must be converted through techniques like one-hot encoding or label encoding."
+    explanation: "Categorical data must be converted to numerical format through techniques like one-hot encoding since most ML algorithms require numerical inputs."
   }
 ];
 
@@ -678,7 +678,7 @@ export const modelTrainingQuizQuestions = [
         "The final output of model training"
       ],
       correctAnswer: "A set of rules or steps the model follows to learn patterns from data",
-      explanation: "An algorithm in machine learning is a set of rules or steps the model follows to learn patterns from data. It processes input data, identifies relationships, and uses them to make predictions."
+      explanation: "An algorithm is a set of rules that processes input data, identifies patterns, and uses them to make predictions."
     },
     {
       question: "What is logistic regression primarily used for?",
@@ -689,7 +689,7 @@ export const modelTrainingQuizQuestions = [
         "Data cleaning"
       ],
       correctAnswer: "Classification tasks",
-      explanation: "Logistic regression is a simple yet powerful algorithm used for classification tasks. It predicts the probability of a data point belonging to a particular class, like determining if an email is spam or not."
+      explanation: "Logistic regression predicts the probability of data belonging to a particular class, making it ideal for binary classification problems."
     },
     {
       question: "What is the recommended split ratio for training and test data?",
@@ -700,7 +700,7 @@ export const modelTrainingQuizQuestions = [
         "100-0 split"
       ],
       correctAnswer: "70-80% for training, 10-15% for testing",
-      explanation: "A common split is 70-80% for training and 10-15% for testing. The training data helps the model learn, while test data evaluates its accuracy on unseen information."
+      explanation: "A common split uses 70-80% for training the model and 10-15% for testing its performance on unseen data."
     },
     {
       question: "Why is a proper data split ratio important?",
@@ -711,7 +711,7 @@ export const modelTrainingQuizQuestions = [
         "It eliminates the need for validation"
       ],
       correctAnswer: "It prevents overfitting or underfitting",
-      explanation: "Proper split ratios prevent overfitting or underfitting. Without a good split, your model might perform well on training data but fail in real-world scenarios."
+      explanation: "Proper splits prevent overfitting (memorizing training data) and underfitting (failing to learn patterns), ensuring good real-world performance."
     },
     {
       question: "What is the prediction column in a dataset?",
@@ -722,7 +722,7 @@ export const modelTrainingQuizQuestions = [
         "A column used only during validation"
       ],
       correctAnswer: "The dependent variable that the model is trained to predict",
-      explanation: "The prediction column is the dependent variable (target) that the model is trained to predict. It contains the actual outcomes the model compares its predictions to during evaluation."
+      explanation: "The prediction column contains the target values the model learns to predict and is used to evaluate prediction accuracy."
     },
     {
       question: "Why are ID columns not used for training?",
@@ -733,7 +733,7 @@ export const modelTrainingQuizQuestions = [
         "They would make the model too accurate"
       ],
       correctAnswer: "They do not provide meaningful patterns for predictions",
-      explanation: "While essential for tracking or organizing data, ID columns are not used for training as they do not provide meaningful patterns for predictions."
+      explanation: "ID columns are just unique identifiers without predictive value and could lead to false patterns if included in training."
     },
     {
       question: "What is feature selection?",
@@ -744,7 +744,7 @@ export const modelTrainingQuizQuestions = [
         "Determining how many categories to include"
       ],
       correctAnswer: "Identifying the most relevant inputs for a model",
-      explanation: "Feature selection is the process of identifying the most relevant inputs (features) for a model. It reduces the dataset to focus on critical variables that impact predictions, removing redundant or irrelevant data."
+      explanation: "Feature selection identifies the most important variables for prediction, removing irrelevant or redundant features to improve model performance."
     },
     {
       question: "Which of the following is NOT a benefit of feature selection?",
@@ -755,7 +755,7 @@ export const modelTrainingQuizQuestions = [
         "Eliminates noise from unnecessary data"
       ],
       correctAnswer: "Guarantees 100% model accuracy",
-      explanation: "Feature selection helps avoid overfitting, saves time by focusing on fewer features, and improves accuracy by eliminating noise, but it cannot guarantee 100% model accuracy as other factors also affect model performance."
+      explanation: "Feature selection improves efficiency and can reduce overfitting, but it cannot guarantee perfect accuracy as other factors affect performance."
     }
   ];
 
@@ -769,7 +769,7 @@ export const modelEvaluationQuizQuestions = [
       "When the model was last updated"
     ],
     correctAnswer: "Which features matter most for predictions",
-    explanation: "SHAP values reveal which features have the greatest impact on predictions. For example, when predicting car prices, SHAP values indicate how much factors like engine size or car age affect the predicted price."
+    explanation: "SHAP values reveal feature importance by showing how much each feature contributes to pushing predictions higher or lower."
   },
   {
     question: "In the context of 'What-if' testing, what is the main purpose of this approach?",
@@ -780,7 +780,7 @@ export const modelEvaluationQuizQuestions = [
       "To reduce the number of features needed"
     ],
     correctAnswer: "To see how changing inputs affects predictions",
-    explanation: "What-if testing allows you to experiment with different input values to observe how they change the model's output, similar to adjusting an ingredient in a recipe to see how it affects the taste."
+    explanation: "What-if testing lets you experiment with different input values to understand how changes affect the model's predictions."
   },
   {
     question: "What does 'Precision' measure in classification models?",
@@ -791,7 +791,7 @@ export const modelEvaluationQuizQuestions = [
       "The total number of predictions made"
     ],
     correctAnswer: "When the model says 'yes', how often it is right",
-    explanation: "Precision measures the accuracy of positive predictions. For example, in spam detection, precision tells you what percentage of emails marked as spam are actually spam."
+    explanation: "Precision measures the accuracy of positive predictions—when the model identifies something as positive, how often it's correct."
   },
   {
     question: "What is a 'False Positive' in a confusion matrix?",
@@ -802,7 +802,7 @@ export const modelEvaluationQuizQuestions = [
       "When your model predicted 'no' and the actual result was 'no'"
     ],
     correctAnswer: "When your model predicted 'yes' but the actual result was 'no'",
-    explanation: "A False Positive occurs when the model incorrectly predicts a positive outcome. In spam detection, this would be a non-spam email that was wrongly classified as spam."
+    explanation: "A false positive occurs when the model incorrectly predicts a positive outcome, like marking a legitimate email as spam."
   },
   {
     question: "What does MAE stand for in regression evaluation?",
@@ -813,7 +813,7 @@ export const modelEvaluationQuizQuestions = [
       "Multiple Algorithm Execution"
     ],
     correctAnswer: "Mean Absolute Error",
-    explanation: "MAE (Mean Absolute Error) measures the average difference between predicted and actual values. For example, an MAE of $2,000 in car price prediction means predictions are off by $2,000 on average."
+    explanation: "MAE measures the average magnitude of errors in predictions, without considering their direction (positive or negative)."
   },
   {
     question: "What does an R-squared value of 80 mean in regression?",
@@ -824,7 +824,7 @@ export const modelEvaluationQuizQuestions = [
       "The model has an 80% chance of being correct"
     ],
     correctAnswer: "The model explains 80% of why the target values change",
-    explanation: "An R-squared value of 80 means the model explains 80% of the variance in the target variable. It's like a score out of 100 that shows how well your model captures the factors that influence your predictions."
+    explanation: "An R-squared of 80 means the model explains 80% of the variance in the target variable, indicating good predictive power."
   },
   {
     question: "What is 'Recall' measuring in classification models?",
@@ -835,7 +835,7 @@ export const modelEvaluationQuizQuestions = [
       "How fast the model can be recalled into memory"
     ],
     correctAnswer: "How many actual positives the model identified correctly",
-    explanation: "Recall measures what proportion of actual positives were identified correctly. In spam detection, recall tells you what percentage of actual spam emails were correctly caught by the model."
+    explanation: "Recall measures the proportion of actual positives correctly identified—like what percentage of all spam emails were caught."
   },
   {
     question: "What are the four main components of a confusion matrix?",
@@ -846,6 +846,6 @@ export const modelEvaluationQuizQuestions = [
       "Learn, Evaluate, Adjust, Predict"
     ],
     correctAnswer: "True Positives, True Negatives, False Positives, False Negatives",
-    explanation: "A confusion matrix contains four key elements that compare predictions to actual values: True Positives (correctly predicted yes), True Negatives (correctly predicted no), False Positives (incorrectly predicted yes), and False Negatives (incorrectly predicted no)."
+    explanation: "A confusion matrix shows correct and incorrect predictions: true positives, true negatives, false positives, and false negatives."
   }
 ];

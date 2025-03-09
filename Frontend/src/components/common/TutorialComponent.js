@@ -24,7 +24,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   height: 800,
   maxWidth: '90vw',
   maxHeight: '90vh',
-  overflow: 'auto',
+  overflow: 'hidden',
   boxShadow: theme.shadows[3],
   zIndex: 9999,
   borderRadius: '12px',
@@ -38,8 +38,10 @@ const SidebarButton = styled(Button)(({ theme }) => ({
   justifyContent: 'flex-start',
   textAlign: 'left',
   textTransform: 'none',
+  fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   borderRadius: theme.shape.borderRadius,
   transition: theme.transitions.create('all'),
+  letterSpacing: '-0.014em',
   '&.active': {
     backgroundColor: alpha(theme.palette.primary.main, 0.1),
     color: theme.palette.primary.main,
@@ -66,6 +68,54 @@ const Backdrop = styled('div')({
   justifyContent: 'center',
   zIndex: 9998,
 });
+
+const SidebarContainer = styled(Box)(({ theme }) => ({
+  width: 280,
+  borderRight: `1px solid ${theme.palette.divider}`,
+  height: '100%',
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  '&::-webkit-scrollbar': {
+    width: '4px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: theme.palette.grey[300],
+    borderRadius: '4px',
+  },
+  '&:hover::-webkit-scrollbar-thumb': {
+    background: theme.palette.grey[400],
+  },
+}));
+
+const ContentContainer = styled(Box)(({ theme }) => ({
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  overflow: 'hidden',
+}));
+
+const ContentScroll = styled(Box)(({ theme }) => ({
+  flex: 1,
+  overflowY: 'auto',
+  padding: theme.spacing(3),
+  '&::-webkit-scrollbar': {
+    width: '4px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: theme.palette.grey[300],
+    borderRadius: '4px',
+  },
+  '&:hover::-webkit-scrollbar-thumb': {
+    background: theme.palette.grey[400],
+  },
+}));
 
 const tabsData = {
   "tab1": {
@@ -248,7 +298,8 @@ const TutorialComponent = ({
                     color: 'text.primary',
                     mb: 0.5,
                     fontSize: '1.5rem',
-                    fontFamily: 'Inter, sans-serif'
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.021em'
                   }}
                 >
                   {tutorialData[activeTab].title}
@@ -258,7 +309,8 @@ const TutorialComponent = ({
                   sx={{ 
                     color: 'text.secondary',
                     fontSize: '0.875rem',
-                    fontFamily: 'Inter, sans-serif'
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.014em'
                   }}
                 >
                   {tutorialData[activeTab].subtitle}
@@ -293,13 +345,11 @@ const TutorialComponent = ({
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex' }}>
-          <Box sx={{ 
-            width: 280,
-            borderRight: 1,
-            borderColor: 'divider',
-            p: 1
-          }}>
+        <Box sx={{ 
+          display: 'flex', 
+          height: 'calc(100% - 160px)'  // Adjust based on header height
+        }}>
+          <SidebarContainer>
             {Object.entries(tutorialData).map(([key, data]) => (
               <Box key={key} sx={{ mb: 2 }}>
                 <Box sx={{ 
@@ -311,7 +361,8 @@ const TutorialComponent = ({
                     fontSize: '0.875rem',
                     fontWeight: 600,
                     color: 'text.primary',
-                    fontFamily: 'Inter, sans-serif'
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.014em'
                   }
                 }}>
                   {data.sections.every((_, index) => isSectionCompleted(key, index)) ? (
@@ -349,8 +400,7 @@ const TutorialComponent = ({
                     sx={{
                       fontSize: '0.875rem',
                       display: 'flex',
-                      alignItems: 'center',
-                      fontFamily: 'Inter, sans-serif'
+                      alignItems: 'center'
                     }}
                   >
                     {isSectionCompleted(key, index) ? (
@@ -375,7 +425,8 @@ const TutorialComponent = ({
                       component="span"
                       sx={{ 
                         color: 'inherit',
-                        fontWeight: 'inherit'
+                        fontWeight: 'inherit',
+                        letterSpacing: '-0.014em'
                       }}
                     >
                       {section.title}
@@ -384,73 +435,69 @@ const TutorialComponent = ({
                 ))}
               </Box>
             ))}
-          </Box>
+          </SidebarContainer>
 
-          <Box sx={{ 
-            flex: 1,
-            p: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            height: '650px',
-            position: 'relative'
-          }}>
-            <Typography 
-              variant="h6"
-              sx={{ 
-                mb: 1,
-                fontWeight: 600,
-                color: 'text.primary',
-                fontFamily: 'Inter, sans-serif'
-              }}
-            >
-              {tutorialData[activeTab].sections[activeSectionIndex].title}
-            </Typography>
-            
-            <Box
-              component="img"
-              src={tutorialData[activeTab].sections[activeSectionIndex].image}
-              alt={`${tutorialData[activeTab].sections[activeSectionIndex].title} illustration`}
-              sx={{
-                width: '100%',
-                maxHeight: '250px',
-                objectFit: 'contain',
-                borderRadius: 1,
-                mb: 3,
-                bgcolor: 'grey.100'
-              }}
-            />
+          <ContentContainer>
+            <ContentScroll>
+              <Typography 
+                variant="h6"
+                sx={{ 
+                  mb: 1,
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                  letterSpacing: '-0.019em'
+                }}
+              >
+                {tutorialData[activeTab].sections[activeSectionIndex].title}
+              </Typography>
+              
+              <Box
+                component="img"
+                src={tutorialData[activeTab].sections[activeSectionIndex].image}
+                alt={`${tutorialData[activeTab].sections[activeSectionIndex].title} illustration`}
+                sx={{
+                  width: '100%',
+                  maxHeight: '250px',
+                  objectFit: 'contain',
+                  borderRadius: 1,
+                  mb: 3,
+                  bgcolor: 'grey.100'
+                }}
+              />
 
-            <Typography 
-              variant="body1"
-              sx={{ 
-                color: 'text.primary',
-                lineHeight: 1.7,
-                flex: 1,
-                overflow: 'auto',
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '1rem',
-                fontWeight: 400,
-                letterSpacing: '0.00938em'
-              }}
-            >
-              {tutorialData[activeTab].sections[activeSectionIndex].content}
-            </Typography>
+              <Typography 
+                variant="body1"
+                sx={{ 
+                  color: 'text.primary',
+                  lineHeight: 1.7,
+                  fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                  fontSize: '1rem',
+                  fontWeight: 400,
+                  letterSpacing: '-0.014em',
+                  '& strong': {
+                    fontWeight: 600
+                  },
+                  '& p': {
+                    marginBottom: '1em'
+                  }
+                }}
+              >
+                {tutorialData[activeTab].sections[activeSectionIndex].content}
+              </Typography>
+            </ContentScroll>
 
             <Box sx={{ 
-              display: 'flex',
-              flexDirection: 'column',
-              mt: 'auto',
-              position: 'relative'
+              borderTop: 1,
+              borderColor: 'divider',
+              p: 2,
+              bgcolor: 'background.paper'
             }}>
               <Box sx={{ 
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                pt: 2,
-                pb: 1,
-                px: 3,
-                borderTop: 1,
-                borderColor: 'divider'
+                px: 1
               }}>
                 <Button
                   variant="text"
@@ -459,14 +506,19 @@ const TutorialComponent = ({
                   sx={{ 
                     color: 'text.secondary',
                     '&:hover': { color: 'text.primary' },
-                    ml: -1
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.014em'
                   }}
                 >
                   Previous
                 </Button>
                 <Typography 
                   variant="body2"
-                  sx={{ color: 'text.secondary' }}
+                  sx={{ 
+                    color: 'text.secondary',
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.014em'
+                  }}
                 >
                   {activeSectionIndex + 1} of {tutorialData[activeTab].sections.length}
                 </Typography>
@@ -479,7 +531,8 @@ const TutorialComponent = ({
                     '&:hover': {
                       bgcolor: 'primary.dark'
                     },
-                    mr: -1
+                    fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.014em'
                   }}
                 >
                   {isLastSection
@@ -488,7 +541,7 @@ const TutorialComponent = ({
                 </Button>
               </Box>
             </Box>
-          </Box>
+          </ContentContainer>
         </Box>
       </StyledCard>
     </Backdrop>

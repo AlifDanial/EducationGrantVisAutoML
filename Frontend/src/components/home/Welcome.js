@@ -43,7 +43,7 @@ const WelcomeDialog = ({ open, setOpen }) => {
             gap: '50px',
           }}
         >
-          <img src='/img/Artboard.png' alt='logo' width='210px' height='158px' />
+          <img src={`${process.env.PUBLIC_URL}/img/Artboard.png`} alt='logo' width='210px' height='158px' />
           <DialogContentText id="alert-dialog-slide-description" style={{ color: 'white' }}>
             <Typography style={{ fontSize: '34px', fontFamily: "'SF Pro Display', sans-serif", fontWeight:600  }}>Ready to Develop<br /> Something Brilliant?</Typography>
             <Typography style={{ marginTop: '3em', fontFamily: "'SF Pro Display', sans-serif", fontSize: '20px', }}>VisAutoML helps you turn your data into <br />

@@ -24,7 +24,7 @@ const Faqs = () => {
   return (
     <Grid container id="FAQs" position="relative" display="flex" flexDirection="column" alignItems="center" minHeight="100vh" zIndex="0">
       <Box position="absolute" top="50vh" right="-135px" zIndex="-1">
-        <img src="./img/land/Ellipse2.png" style={{ maxWidth: "270px", maxHeight: "270px" }} />
+        <img src={`${process.env.PUBLIC_URL}/img/land/Ellipse2.png`} style={{ maxWidth: "270px", maxHeight: "270px" }} />
       </Box>
       <Typography
         width="100%"

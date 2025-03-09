@@ -208,7 +208,7 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
 
   // This function will navigate to the "/review" route when called
   const handleBack1 = () => {
-    navigate("/select");
+    setBackDialogOpen(true);
   };
 
   const { mode } = useSelector((state) => state.model);
@@ -360,29 +360,55 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
               mb: 2
             }}
           >
-            <Grid
-              sx={{
-                display: "flex",
-                alignItems: "center"
-              }}
-            >
-              <IconButton onClick={handleBack1}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <IconButton 
+                onClick={handleBack1}
                 sx={{
-                  fontSize: "1.5rem",
-                  fontWeight: "bolder",
-                  fontFamily: "'SF Pro Display', sans-serif",
-
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)'
+                  }
                 }}
               >
-                Predict & Explain
-              </Typography>
-              <IconButton onClick={handleRefresh} title="Refresh ML Explainer">
+                <ArrowBackIcon />
+              </IconButton>
+              <Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontSize: { xs: "1.5rem", sm: "1.75rem", md: "1.2rem" },
+                    fontWeight: 700,
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    color: "#1E293B",
+                    mb: 0.5
+                  }}
+                >
+                  Predict & Explain
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { xs: "0.8rem", sm: "0.95rem", md: ".95rem" },
+                    fontWeight: 400,
+                    fontFamily: "'SF Pro Display', sans-serif",
+                    color: "#64748B"
+                  }}
+                >
+                  Understand how your model makes predictions
+                </Typography>
+              </Box>
+              <IconButton 
+                onClick={handleRefresh} 
+                title="Refresh ML Explainer"
+                sx={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)'
+                  }
+                }}
+              >
                 <RefreshIcon />
               </IconButton>
-            </Grid>
+            </Box>
             {/* middle Grid */}
             <Grid item display="flex" justifyContent="center" alignItems="center" sx={{mainTop: "30px", marginRight:"5em"}}>            
               <Typography
@@ -397,7 +423,7 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
             // onClick={() => setOpenEdit(true)}
           >
               <div style={{ display: "flex", alignItems: "center" }}>
-                <img src={`/img/${type}.png`} alt={type} />
+                <img src={`${process.env.PUBLIC_URL}/img/${type}.png`} alt={type} />
                 <span style={{ marginLeft: "5px" }}>{name}</span>
               </div>
           </Typography>
@@ -465,7 +491,7 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
             src="http://localhost:8050"
             key={refreshCount} // Use refreshCount as the key to force re-render
             width="100%"
-            height="97%"
+            height="900px"
             onLoad={handleLoad}
             frameBorder="0"
           ></iframe>

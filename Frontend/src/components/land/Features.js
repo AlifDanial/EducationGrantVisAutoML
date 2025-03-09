@@ -28,7 +28,7 @@ const Features = () => {
   return (
     <Grid container id="Features" position="relative" zIndex="0">
       <Box position="absolute" left="-135px" top="100px" zIndex="-1">
-        <img src="./img/land/Ellipse2.png" style={{ maxWidth: "270px", maxHeight: "270px" }} />
+        <img src={`${process.env.PUBLIC_URL}/img/land/Ellipse2.png`} style={{ maxWidth: "270px", maxHeight: "270px" }} />
       </Box>
       <Typography
         width="100%"
