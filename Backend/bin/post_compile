@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+echo "-----> Running post-compile hook"
+
+# Set up directories
+mkdir -p $BUILD_DIR/.heroku/python/
+
+# Clean up unnecessary files
+find . -type d -name "__pycache__" -exec rm -rf {} +
+find . -type f -name "*.pyc" -delete
+find . -type f -name "*.joblib" -delete
+find . -type f -name "*.yaml" -delete
+
+# Run collectstatic with reduced verbosity
+python manage.py collectstatic --noinput --verbosity=0
+
+echo "-----> Post-compile hook completed" 
