@@ -1,0 +1,1 @@
+from wsgi_entrypoint import app 

@@ -1,0 +1,11 @@
+{
+  "name": "visautoml-backend",
+  "version": "1.0.0",
+  "description": "Django backend for VisAutoML",
+  "scripts": {
+    "build": "pip install -r requirements-prod.txt"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 

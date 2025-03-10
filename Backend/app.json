@@ -1,0 +1,21 @@
+{
+  "name": "vis-automl",
+  "description": "Visual AutoML Application",
+  "repository": "https://github.com/yourusername/vis-automl",
+  "keywords": ["python", "django", "machine-learning"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": {
+      "description": "Django settings module",
+      "value": "VisAutoML.settings"
+    },
+    "DISABLE_COLLECTSTATIC": {
+      "description": "Disable collectstatic during build",
+      "value": "1"
+    }
+  }
+} 
