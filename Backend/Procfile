@@ -1,2 +1,2 @@
 release: python manage.py migrate
-web: gunicorn VisAutoML.wsgi --log-file - 
+web: gunicorn VisAutoML.wsgi --log-file - --workers 2 
