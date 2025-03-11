@@ -128,20 +128,24 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = '/static/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-
-# Use the standard Django static files storage
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # The absolute path to the directory where collectstatic will collect static files for deployment.
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Important: Include the React build directory in STATICFILES_DIRS
+# Define directories where Django will look for static files
 STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'machine_learning/static'),
-    os.path.join(BASE_DIR.parent, 'Frontend/build'),
+    # Include the img directory as a static files directory
+    os.path.join(BASE_DIR, 'img'),
 ]
+
+# Media files (User uploaded files)
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Use the standard Django static files storage
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
