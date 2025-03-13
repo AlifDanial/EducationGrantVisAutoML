@@ -1496,8 +1496,8 @@ const Body = () => {
                       <Typography
                         sx={{
                           fontFamily: "'SF Pro Display', sans-serif",
-                          fontSize: { lg: "1.5em", md: "1.0em", xs: "1.0em" },
-                          lineHeight: { lg: "1.5em", md: "1.1em", xs: ".9em" },
+                          fontSize: { lg: "1.0em", md: "1.0em", xs: "1.0em" },
+                          lineHeight: { lg: "1.1em", md: "1.1em", xs: ".9em" },
                           fontWeight: "700",
                         }}
                       >
@@ -1702,7 +1702,7 @@ const Body = () => {
                       setSortBy={setSortBy}
                       sortOrder={sortOrder}
                       setSortOrder={setSortOrder}
-                      rowsPerPage={{ lg: 5, md: 4 }}
+                      rowsPerPage={{ lg: 4, md: 4 }}
                     />
                   </Grid>
                 </CustomTooltip>
@@ -1800,7 +1800,7 @@ const Body = () => {
             <Grid item xs={12} sx={{ width: "100%", height: "33.4%", padding: "10px" }}>
               <Paper sx={{ width: "100%", height: "100%", padding: "20px", borderRadius: "20px" }}>
                 <Grid container sx={{ width: "100%", height: "100%" }}>
-                <Grid item xs={12} sx={{ width: "100%", height: { lg: "30%", md: "15%" } }}>
+                <Grid item xs={12} sx={{ width: "100%", height: { lg: "15%", md: "15%" } }}>
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",
@@ -1866,7 +1866,7 @@ const Body = () => {
             <Grid item xs={12} sx={{ width: "100%", height: "33.3%", padding: "10px" }}>
               <Paper sx={{ width: "100%", height: "100%", padding: "20px", borderRadius: "20px" }}>
                 <Grid container sx={{ width: "100%", height: "100%" }}>
-                <Grid item xs={12} sx={{ width: "100%", height: { lg: "30%", md: "15%" } }}>
+                <Grid item xs={12} sx={{ width: "100%", height: { lg: "15%", md: "15%" } }}>
                     <Typography
                       sx={{
                         fontFamily: "'SF Pro Display', sans-serif",

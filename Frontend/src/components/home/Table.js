@@ -22,7 +22,7 @@ import "../../App.css";
 import LoadingDialog from "./LoadingDialog";
 import { Backdrop, CircularProgress } from "@mui/material";
 
-const TableComponent = ({ rows, setPosts, sortBy, setSortBy, sortOrder, setSortOrder, rowsPerPage = { lg: 5, md: 4 } }) => {
+const TableComponent = ({ rows, setPosts, sortBy, setSortBy, sortOrder, setSortOrder, rowsPerPage = { lg: 4, md: 4 } }) => {
   const dispatch = useDispatch();
   const csrfToken = Cookies.get("csrftoken");
   const config = {
@@ -180,10 +180,11 @@ const TableComponent = ({ rows, setPosts, sortBy, setSortBy, sortOrder, setSortO
                   align="left"
                   sx={{
                     fontFamily: "'SF Pro Display', sans-serif",
-                    fontSize: { xs: "0.9rem", sm: "0.95rem", md: "1rem" },
+                    fontSize: { xs: "0.9rem", sm: "0.95rem", md: "1rem"  },
                     fontWeight: "bold",
                     backgroundColor: '#F8FAFC',
                     borderBottom: '2px solid rgba(0, 0, 0, 0.08)',
+                    width: { xs: '150px', sm: '150px', md: '150px', lg: '150px'}
                   }}
                 >
                   Model Type
@@ -197,7 +198,7 @@ const TableComponent = ({ rows, setPosts, sortBy, setSortBy, sortOrder, setSortO
                   fontWeight: "bold",
                   backgroundColor: '#F8FAFC',
                   borderBottom: '2px solid rgba(0, 0, 0, 0.08)',
-                  width: { xs: '150px', sm: '150px', md: '150px' }
+                  width: { xs: '150px', sm: '150px', md: '150px', lg: '250px'}
                 }}
               >
                 Algorithm
