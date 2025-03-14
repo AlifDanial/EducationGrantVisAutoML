@@ -30,6 +30,7 @@ import {
   modelTrainingQuizQuestions,
   modelEvaluationQuizQuestions
 } from "../common/LearningContent";
+import { BACKEND_BASE_URL } from "../../config/config";
 
 // Import images for tutorials
 import ml from "../../static/images/Home Page.gif";
@@ -48,6 +49,9 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
   const [loading, setLoading] = useState(true);
   const [openEdit, setOpenEdit] = useState(false);
   const [loadingOpen, setLoadingOpen] = useState(false);
+  const [dashboardSession, setDashboardSession] = useState(null);
+  const [dashboardPort, setDashboardPort] = useState(8050);
+  const [dashboardError, setDashboardError] = useState(null);
 
   // FAB state management
   const [fabOpen, setFabOpen] = useState(false);
@@ -196,9 +200,24 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
   const handleBack = () => {
     setBackDialogOpen(true);
   };
+  
   const handleRefresh = () => {
     console.log('Refreshing Box...');
     setLoading(true);
+    
+    // Stop the current dashboard session if it exists
+    if (dashboardSession) {
+      fetch(`${BACKEND_BASE_URL}dashboard/session/stop/${dashboardSession}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      .then(response => response.json())
+      .catch(error => console.error('Error stopping dashboard:', error));
+    }
+    
+    // Start a new dashboard session
+    startDashboardSession();
+    
     setRefreshCount(prevCount => prevCount + 1);
   }
 
@@ -228,6 +247,49 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
   const onClick = () => {
     setLoadingOpen(true);
   }
+
+  // Function to start a dashboard session
+  const startDashboardSession = () => {
+    const modelId = useSelector((state) => state.model.id);
+    
+    fetch(`${BACKEND_BASE_URL}dashboard/session/start/${modelId}`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        setDashboardError(data.error);
+        setLoading(false);
+      } else {
+        setDashboardSession(data.session_id);
+        setDashboardPort(data.port);
+        setDashboardError(null);
+      }
+    })
+    .catch(error => {
+      console.error('Error starting dashboard session:', error);
+      setDashboardError('Failed to start dashboard session');
+      setLoading(false);
+    });
+  };
+
+  // Start a dashboard session when the component mounts
+  useEffect(() => {
+    startDashboardSession();
+    
+    // Cleanup function to stop the dashboard session when the component unmounts
+    return () => {
+      if (dashboardSession) {
+        fetch(`${BACKEND_BASE_URL}dashboard/session/stop/${dashboardSession}`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+        .then(response => response.json())
+        .catch(error => console.error('Error stopping dashboard:', error));
+      }
+    };
+  }, []);
 
   // FAB event handlers
   const handleFabToggle = () => {
@@ -486,16 +548,32 @@ const Body = ({ backDialogOpen, setBackDialogOpen }) => {
                 <CircularProgress color="inherit" />
               </Backdrop>
             )}
-            <iframe
-            id="iframe-id"
-            src="http://localhost:8050"
-            key={refreshCount} // Use refreshCount as the key to force re-render
-            width="100%"
-            height="900px"
-            onLoad={handleLoad}
-            frameBorder="0"
-          ></iframe>
-
+            {dashboardError && (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error" variant="h6">
+                  {dashboardError}
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={handleRefresh}
+                  sx={{ mt: 2 }}
+                >
+                  Retry
+                </Button>
+              </Box>
+            )}
+            {!dashboardError && (
+              <iframe
+                id="iframe-id"
+                src={`http://localhost:${dashboardPort}`}
+                key={refreshCount} // Use refreshCount as the key to force re-render
+                width="100%"
+                height="900px"
+                onLoad={handleLoad}
+                frameBorder="0"
+              ></iframe>
+            )}
           </Grid>
         </Grid>
       </Paper>

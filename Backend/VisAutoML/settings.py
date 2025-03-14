@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +26,16 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hzpyx0#-@0+j(ml=y4gy29pzr2kv9jq4#-x-cf95m_veno7avq'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-hzpyx0#-@0+j(ml=y4gy29pzr2kv9jq4#-x-cf95m_veno7avq')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*']  # For development
+# For production, specify your Railway domain and localhost
+RAILWAY_STATIC_URL = os.environ.get('RAILWAY_STATIC_URL', '')
+if RAILWAY_STATIC_URL:
+    ALLOWED_HOSTS = [RAILWAY_STATIC_URL, 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -85,12 +94,22 @@ WSGI_APPLICATION = 'VisAutoML.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# Default SQLite database for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Use PostgreSQL on Railway in production
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 
 # Password validation
@@ -144,8 +163,12 @@ STATICFILES_DIRS = [
 # Media files (User uploaded files)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Use the standard Django static files storage
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# Use WhiteNoise for static files in production
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    # Use the standard Django static files storage in development
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -153,12 +176,33 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Config
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ORIGIN_WHITELIST = [
+# Use either CORS_ORIGIN_ALLOW_ALL or CORS_ALLOWED_ORIGINS, not both
+# For development, we'll use CORS_ALLOWED_ORIGINS to be more secure
+CORS_ORIGIN_ALLOW_ALL = False
+
+# Get the frontend URL from environment variables or use default
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+# Renamed from CORS_ORIGIN_WHITELIST which is deprecated
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
     'http://localhost:3000',
     'http://192.168.144.88:3000',
+    'https://8341-14-192-210-146.ngrok-free.app',
 ]
+
+# Allow credentials
 CORS_ALLOW_CREDENTIALS = True
+# Allow all methods
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+# Allow all headers
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -170,3 +214,10 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# Session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 1 day in seconds
+SESSION_COOKIE_SECURE = not DEBUG  # Use secure cookies in production
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript from accessing cookies
+SESSION_COOKIE_SAMESITE = 'Lax'  # Restrict cookie sending to same-site requests

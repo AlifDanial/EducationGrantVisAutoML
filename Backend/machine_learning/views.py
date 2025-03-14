@@ -4,19 +4,18 @@ import traceback
 from rest_framework import viewsets, status, decorators, views
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from multiprocessing import Process
 import threading
 import pandas as pd
 import os
 
-
 from .serializers import ModelSerializer, ModelDescriptionSerializer
 from .models import Model, ModelDescription
 from .review import get_review
 from .regression_custom_explainer import finishing
-from .dashboard import runModel
+from .dashboard_manager import dashboard_manager
 
 def index(request):
     # print(request)
@@ -25,10 +24,16 @@ def index(request):
 
 def dashboard(request, pk):
     print("dashboard >>")
-
-    os.system("npx kill-port 8050")
-    runModel(pk)
-    return "Success"
+    
+    # Start a dashboard session for this model
+    session_id, port = dashboard_manager.start_dashboard(pk)
+    
+    if session_id:
+        # Store the session ID in the user's session
+        request.session['dashboard_session_id'] = session_id
+        return JsonResponse({"status": "success", "session_id": session_id, "port": port})
+    else:
+        return JsonResponse({"status": "error", "message": "Failed to start dashboard"}, status=500)
 
 # @api_view(['POST'])
 # def chatbot_response(request):
@@ -43,9 +48,6 @@ def dashboard(request, pk):
 #     )
 
 #     return JsonResponse({'response': response.choices[0].text})
-
-
-
 
 class ModelViewSet(viewsets.ViewSet):
 
@@ -90,13 +92,21 @@ class ModelViewSet(viewsets.ViewSet):
     
     def open(self, request, pk):
         print("dashboard >>>>>", pk)
-
-        os.system("npx kill-port 8050")
-        os.system('explainerdashboard run '+pk+'.yaml --no-browser')
-        # os.system("explainerdashboard run explainer.joblib")
-
-        return Response({"response":"Success"})
-
+        
+        # Get user ID from session or create a new one
+        user_id = request.session.get('user_id')
+        if not user_id:
+            user_id = request.session['user_id'] = f"user_{request.session.session_key}"
+        
+        # Start a dashboard session for this model
+        session_id, port = dashboard_manager.start_dashboard(pk, user_id)
+        
+        if session_id:
+            # Store the session ID in the user's session
+            request.session['dashboard_session_id'] = session_id
+            return Response({"status": "success", "session_id": session_id, "port": port})
+        else:
+            return Response({"status": "error", "message": "Failed to start dashboard"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ModelDescriptionViewSet(viewsets.ViewSet):
 
@@ -194,7 +204,7 @@ class FlaskModelViewSet(viewsets.ViewSet):
         # os.system("kill -9 `lsof -t -i:8050`")
         # windows
         print("Model id >>", model_id)
-        os.system("npx kill-port 8050")
+        # We don't need to kill port 8050 anymore as we're using dynamic ports
         if model in ['CL']:
             print("view--------------------")
             os.system(
