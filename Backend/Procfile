@@ -1,0 +1,1 @@
+web: cd Backend && gunicorn VisAutoML.wsgi:application --bind 0.0.0.0:$PORT 
